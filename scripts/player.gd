@@ -29,31 +29,48 @@ func _physics_process(delta):
 		self.queue_free()
 
 func player_movement(_delta):
-
+	# Get input direction
+	var input_x = 0
+	var input_y = 0
+	
 	if Input.is_action_pressed("ui_right"):
-		current_dir = "right"
-		play_anim(1)
-		velocity.x = speed
-		velocity.y = 0
+		input_x = 1
 	elif Input.is_action_pressed("ui_left"):
-		current_dir = "left"
-		play_anim(1)
-		velocity.x = -speed
-		velocity.y = 0
-	elif Input.is_action_pressed("ui_down"):
-		play_anim(1)
-		current_dir = "down"
-		velocity.y = speed
-		velocity.x = 0
+		input_x = -1
+	
+	if Input.is_action_pressed("ui_down"):
+		input_y = 1
 	elif Input.is_action_pressed("ui_up"):
-		current_dir = "up"
+		input_y = -1
+	
+	# Determine direction based on input
+	if input_x != 0 or input_y != 0:
+		# Moving
+		if input_x == 1 and input_y == 0:
+			current_dir = "right"
+		elif input_x == -1 and input_y == 0:
+			current_dir = "left"
+		elif input_x == 0 and input_y == 1:
+			current_dir = "down"
+		elif input_x == 0 and input_y == -1:
+			current_dir = "up"
+		elif input_x == 1 and input_y == -1:
+			current_dir = "up_right"
+		elif input_x == -1 and input_y == -1:
+			current_dir = "up_left"
+		elif input_x == 1 and input_y == 1:
+			current_dir = "down_right"
+		elif input_x == -1 and input_y == 1:
+			current_dir = "down_left"
+		
+		# Set velocity (normalized for diagonal movement)
+		var direction = Vector2(input_x, input_y).normalized()
+		velocity = direction * speed
 		play_anim(1)
-		velocity.y = -speed
-		velocity.x = 0
 	else:
+		# Not moving
+		velocity = Vector2.ZERO
 		play_anim(0)
-		velocity.x = 0
-		velocity.y = 0
 	
 	move_and_slide()
 
@@ -62,33 +79,54 @@ func play_anim(movement):
 	var anim = $AnimatedSprite2D
 
 	if dir == "right":
-		anim.flip_h = false 
 		if movement == 1:
-			anim.play("side_walk")
+			anim.play("side_right_walk")
 		elif movement == 0:
 			if attack_ip == false:
-				anim.play("side_idle")
-	if dir == "left":
-		anim.flip_h = true 
+				anim.play("side_right_idle")
+	elif dir == "left":
 		if movement == 1:
-			anim.play("side_walk")
+			anim.play("side_left_walk")
 		elif movement == 0:
 			if attack_ip == false:
-				anim.play("side_idle")
-	if dir == "down":
-		anim.flip_h = true 
+				anim.play("side_left_idle")
+	elif dir == "down":
 		if movement == 1:
 			anim.play("front_walk")
 		elif movement == 0:
 			if attack_ip == false:
 				anim.play("front_idle")
-	if dir == "up":
-		anim.flip_h = true 
+	elif dir == "up":
 		if movement == 1:
 			anim.play("back_walk")
 		elif movement == 0:
 			if attack_ip == false:
-				anim.play("back_idle")    
+				anim.play("back_idle")
+	# Diagonal directions
+	elif dir == "up_right":
+		if movement == 1:
+			anim.play("diagonal_up_right_walk")
+		elif movement == 0:
+			if attack_ip == false:
+				anim.play("diagonal_up_right_idle")
+	elif dir == "up_left":
+		if movement == 1:
+			anim.play("diagonal_up_left_walk")
+		elif movement == 0:
+			if attack_ip == false:
+				anim.play("diagonal_up_left_idle")
+	elif dir == "down_right":
+		if movement == 1:
+			anim.play("diagonal_down_right_walk")
+		elif movement == 0:
+			if attack_ip == false:
+				anim.play("diagonal_down_right_idle")
+	elif dir == "down_left":
+		if movement == 1:
+			anim.play("diagonal_down_left_walk")
+		elif movement == 0:
+			if attack_ip == false:
+				anim.play("diagonal_down_left_idle")    
 
 func player():
 	pass # Replace with function body.    

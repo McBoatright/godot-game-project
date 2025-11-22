@@ -1,13 +1,13 @@
 [gd_scene load_steps=12 format=3 uid="uid://coar0w52ewb50"]
 
-[ext_resource type="Script" uid="uid://7y2vp5jivm4g" path="res://scenes/world.gd" id="1_qfnet"]
+[ext_resource type="Script" path="res://scenes/world.gd" id="1_qfnet"]
 [ext_resource type="Texture2D" uid="uid://d3cgm87pl8qa" path="res://Art/sprites/tilesets/plains.png" id="2_k0juu"]
 [ext_resource type="Texture2D" uid="uid://ddyemaq67kuwp" path="res://Art/sprites/tilesets/grass.png" id="3_71j4m"]
 [ext_resource type="Texture2D" uid="uid://6rn6vydl75e2" path="res://Art/sprites/objects/objects.png" id="4_qfnet"]
 [ext_resource type="PackedScene" uid="uid://be8qbmt0fe144" path="res://scenes/player.tscn" id="5_71j4m"]
 [ext_resource type="PackedScene" uid="uid://2oqfqxx5b61g" path="res://scenes/enemy.tscn" id="6_qfnet"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i7141"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_qfnet"]
 texture = ExtResource("2_k0juu")
 2:1/0 = 0
 1:0/0 = 0
@@ -38,11 +38,11 @@ texture = ExtResource("2_k0juu")
 4:6/0 = 0
 4:5/0 = 0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4mrxx"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i7141"]
 texture = ExtResource("3_71j4m")
 0:0/0 = 0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7r4gi"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4mrxx"]
 texture = ExtResource("4_qfnet")
 0:0/0 = 0
 0:0/0/y_sort_origin = 4
@@ -73,9 +73,9 @@ texture = ExtResource("4_qfnet")
 
 [sub_resource type="TileSet" id="TileSet_w7kh3"]
 physics_layer_0/collision_layer = 1
-sources/0 = SubResource("TileSetAtlasSource_i7141")
-sources/1 = SubResource("TileSetAtlasSource_4mrxx")
-sources/2 = SubResource("TileSetAtlasSource_7r4gi")
+sources/0 = SubResource("TileSetAtlasSource_qfnet")
+sources/1 = SubResource("TileSetAtlasSource_i7141")
+sources/2 = SubResource("TileSetAtlasSource_4mrxx")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_i7141"]
 size = Vector2(106, 85.5)
