@@ -8,18 +8,35 @@ var player_alive = true
 var attack_ip = false
 var can_take_damage = true
 
+# Mana system
+var mana = 0
+var max_mana = 99  # No limit mentioned, but setting a cap for UI
+const MANA_REGEN_INTERVAL = 10.0  # Seconds between mana regeneration
+
 const speed = 100
 var current_dir = "none"
 
 func _ready():
 	if $AnimatedSprite2D:
 		$AnimatedSprite2D.play("front_idle")
+	
+	# Debug: Print all children
+	print("Player children:")
+	for child in get_children():
+		print("  - ", child.name)
+	
+	# Setup mana regeneration timer
+	setup_mana_timer()
+	
+	# Initialize mana display
+	update_mana_ui()
 
 func _physics_process(delta):
 	player_movement(delta)
 	enemy_attack()
 	attack()
 	update_health()
+	update_mana_ui()
 
 
 	if health <= 0 and player_alive:
@@ -207,3 +224,29 @@ func _on_regin_timer_timeout():
 			health = 100
 	if health <= 0:
 		health = 0
+
+
+# ===== MANA SYSTEM =====
+
+func setup_mana_timer():
+	# Create a timer for mana regeneration
+	var mana_timer = Timer.new()
+	mana_timer.name = "ManaTimer"
+	mana_timer.wait_time = MANA_REGEN_INTERVAL
+	mana_timer.autostart = true
+	mana_timer.one_shot = false
+	add_child(mana_timer)
+	mana_timer.timeout.connect(_on_mana_timer_timeout)
+
+func _on_mana_timer_timeout():
+	# Add 1 mana every 10 seconds
+	if mana < max_mana:
+		mana += 1
+		print("Mana regenerated! Current mana: ", mana)
+
+func update_mana_ui():
+	var mana_label = get_node_or_null("mana_label")
+	if mana_label:
+		mana_label.text = "Mana: " + str(mana)
+	else:
+		print("WARNING: mana_label not found!")

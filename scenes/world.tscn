@@ -1,6 +1,5 @@
-[gd_scene load_steps=12 format=3 uid="uid://coar0w52ewb50"]
+[gd_scene load_steps=11 format=3 uid="uid://coar0w52ewb50"]
 
-[ext_resource type="Script" path="res://scenes/world.gd" id="1_qfnet"]
 [ext_resource type="Texture2D" uid="uid://d3cgm87pl8qa" path="res://Art/sprites/tilesets/plains.png" id="2_k0juu"]
 [ext_resource type="Texture2D" uid="uid://ddyemaq67kuwp" path="res://Art/sprites/tilesets/grass.png" id="3_71j4m"]
 [ext_resource type="Texture2D" uid="uid://6rn6vydl75e2" path="res://Art/sprites/objects/objects.png" id="4_qfnet"]
@@ -82,7 +81,6 @@ size = Vector2(106, 85.5)
 
 [node name="world" type="Node2D"]
 y_sort_enabled = true
-script = ExtResource("1_qfnet")
 
 [node name="TileMap" type="TileMap" parent="."]
 y_sort_enabled = true
@@ -100,10 +98,10 @@ layer_2/tile_data = PackedInt32Array(327684, 655362, 7, 393220, 655362, 8, 32768
 
 [node name="player" parent="." instance=ExtResource("5_71j4m")]
 y_sort_enabled = true
-position = Vector2(328, 108)
+position = Vector2(62, 151)
 
 [node name="enemy" parent="." instance=ExtResource("6_qfnet")]
-position = Vector2(334, 109)
+position = Vector2(500, 83)
 
 [node name="collisons" type="StaticBody2D" parent="."]
 
