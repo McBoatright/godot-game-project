@@ -20,9 +20,9 @@ func initialize_spells():
 	# For now, creating placeholder spells with varied costs
 	
 	# Tier 1 spells (1 mana) - 3 spells
-	all_spells.append(Spell.new("Spark", 1, "damage", "Quick lightning bolt", 15))
-	all_spells.append(Spell.new("Minor Heal", 1, "heal", "Small health recovery", 10))
-	all_spells.append(Spell.new("Shield", 1, "buff", "Temporary defense boost", 5))
+	all_spells.append(Spell.new("Spark", 1, "damage", "Quick lightning bolt", 15, false))
+	all_spells.append(Spell.new("Minor Heal", 1, "heal", "Small health recovery", 10, true))  # Reusable for testing!
+	all_spells.append(Spell.new("Shield", 1, "buff", "Temporary defense boost", 5, true))  # Reusable!
 	
 	# Tier 2 spells (2 mana) - 3 spells
 	all_spells.append(Spell.new("Fireball", 2, "damage", "Moderate fire damage", 30))
@@ -54,9 +54,21 @@ func refresh_deck():
 	for spell in all_spells:
 		available_spells.append(spell)
 	
-	available_spells.shuffle()
+	# Don't shuffle - keep tier order
 	deck_refreshed.emit()
-	print("Deck refreshed! ", available_spells.size(), " spells available")
+	print("=== DECK REFRESHED - All 15 spells available again! ===")
+
+func remove_spell_from_available(spell: Spell):
+	# Remove spell from available pool (picked up from river)
+	if available_spells.has(spell):
+		available_spells.erase(spell)
+		picked_spells.append(spell)
+		print("  Spells remaining in deck: ", available_spells.size(), "/15")
+		
+		# Auto-refresh if all spells picked
+		if available_spells.is_empty():
+			print("=== ALL SPELLS PICKED! Deck refreshing... ===")
+			refresh_deck()
 
 func cast_spell(spell: Spell, current_mana: int) -> bool:
 	# Check if spell can be cast

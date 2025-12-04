@@ -11,11 +11,17 @@ var can_take_damage = true
 # Mana system
 var mana = 0
 var max_mana = 99  # No limit mentioned, but setting a cap for UI
-const MANA_REGEN_INTERVAL = 10.0  # Seconds between mana regeneration
+const MANA_REGEN_INTERVAL = 5.0  # 5 seconds for testing (was 10.0)
 
 # Deck system
 var deck_manager
 var river_manager
+
+# Hand/Inventory system (Phantom Dust style)
+const MAX_HAND_SIZE = 4  # 4 spell slots like Phantom Dust
+var hand: Array = [null, null, null, null]  # 4 slots, can be null
+var consumed_spells: int = 0  # Count of spells overwritten/cast (for synergy mechanics)
+var slot_cooldowns: Array = [0.0, 0.0, 0.0, 0.0]  # Prevent multiple triggers
 
 const speed = 100
 var current_dir = "none"
@@ -48,12 +54,35 @@ func _physics_process(delta):
 	update_health()
 	update_mana_ui()
 	
-	# Test spell casting with Space bar
-	if Input.is_action_just_pressed("ui_accept"):  # Space bar
+	# Update slot cooldowns
+	for i in range(4):
+		if slot_cooldowns[i] > 0:
+			slot_cooldowns[i] -= delta
+	
+	# Button-based spell pickup AND casting (Phantom Dust style)
+	# Press 1-4 to either pick up spell to that slot OR cast from that slot
+	if Input.is_action_just_pressed("ui_accept"):
+		# Space bar for old test
 		test_cast_spell()
 	
-	# Test orb picking with 'E' key
-	if Input.is_action_just_pressed("ui_cancel"):  # Escape key (temp, will change)
+	if Input.is_action_just_pressed("ui_cancel"):
+		# ESC for old orb test
+		if river_manager:
+			test_pick_orb()
+	
+	# Keys 1-4: Pick up spell to slot OR cast from slot (with cooldown to prevent spam)
+	if Input.is_key_pressed(KEY_1) and slot_cooldowns[0] <= 0:
+		handle_slot_action(0)
+		slot_cooldowns[0] = 0.3  # 300ms cooldown
+	elif Input.is_key_pressed(KEY_2) and slot_cooldowns[1] <= 0:
+		handle_slot_action(1)
+		slot_cooldowns[1] = 0.3
+	elif Input.is_key_pressed(KEY_3) and slot_cooldowns[2] <= 0:
+		handle_slot_action(2)
+		slot_cooldowns[2] = 0.3
+	elif Input.is_key_pressed(KEY_4) and slot_cooldowns[3] <= 0:
+		handle_slot_action(3)
+		slot_cooldowns[3] = 0.3
 		if river_manager:
 			test_pick_orb()
 
@@ -323,23 +352,22 @@ func setup_river():
 	river_manager.river_run_complete.connect(_on_river_run_complete)
 	river_manager.timer_updated.connect(_on_river_timer_updated)
 	
-	# Start first river run at tier 1
-	river_manager.start_river_run(1)
+	# Start first river run (run 0 = 1-cost only)
+	river_manager.start_river_run(0)
 	
 	print("River system initialized!")
 
-func _on_river_refreshed(tier: int):
-	print("RIVER REFRESHED - Tier ", tier, " spells now available!")
+func _on_river_refreshed(run_number: int):
+	print("RIVER REFRESHED - Run ", run_number + 1, "/5 ready!")
 
 func _on_orb_picked(orb_index: int, spell: Spell, is_player: bool):
 	if is_player:
 		print("Player picked orb ", orb_index, ": ", spell.spell_name)
-		# Add spell to player's hand (to be implemented)
 	else:
 		print("Opponent picked orb ", orb_index)
 
-func _on_river_run_complete(tier: int):
-	print("RIVER RUN COMPLETE - Tier ", tier, " ended. New tier starting...")
+func _on_river_run_complete(run_number: int):
+	print("RIVER RUN COMPLETE - Run ", run_number + 1, " ended. Next run starting...")
 
 func _on_river_timer_updated(_time_left: float):
 	# Update river timer UI (to be implemented)
@@ -355,3 +383,131 @@ func test_pick_orb():
 			print("Picked up: ", spell.spell_name, " (Cost: ", spell.mana_cost, ")")
 	else:
 		print("No player orbs available to pick!")
+
+# ===== HAND/INVENTORY SYSTEM (PHANTOM DUST STYLE) =====
+
+func handle_slot_action(slot_index: int):
+	# Unified function: Pick up spell to slot OR cast from slot
+	# Priority: If player is near orbs, pick up. Otherwise, cast.
+	
+	if river_manager:
+		var player_orbs = river_manager.get_player_orbs()
+		if player_orbs.size() > 0:
+			# Player has orbs available - PICK UP mode
+			var orb = player_orbs[0]  # Pick first available orb
+			var spell = river_manager.pick_orb(orb.index, true)
+			if spell:
+				assign_spell_to_slot(slot_index, spell)
+			return
+	
+	# No orbs to pick up - CAST mode
+	cast_spell_from_slot(slot_index)
+
+func assign_spell_to_slot(slot_index: int, spell: Spell):
+	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:
+		return
+	
+	# Check if slot already has a spell (overwrite = consume)
+	if hand[slot_index] != null:
+		var old_spell = hand[slot_index]
+		consumed_spells += 1
+		print("CONSUMED: ", old_spell.spell_name, " (Total consumed: ", consumed_spells, ")")
+	
+	# Assign new spell to slot
+	hand[slot_index] = spell
+	print("ASSIGNED to slot [", slot_index + 1, "]: ", spell.spell_name, " (", spell.mana_cost, " mana)")
+	print_hand()
+	update_hand_ui()
+
+func cast_spell_from_slot(slot_index: int) -> bool:
+	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:
+		return false
+	
+	var spell = hand[slot_index]
+	if spell == null:
+		print("Slot [", slot_index + 1, "] is empty!")
+		return false
+	
+	# Check if player has enough mana
+	if not spell.can_cast(mana):
+		print("Not enough mana! Need ", spell.mana_cost, ", have ", mana)
+		return false
+	
+	# Cast the spell
+	mana -= spell.mana_cost
+	
+	# Check if spell is reusable or consumable
+	if spell.is_reusable:
+		# Reusable spell - stays in hand
+		print("CAST (reusable) from slot [", slot_index + 1, "]: ", spell.spell_name, " (", spell.effect_type, ", power: ", spell.power, ")")
+	else:
+		# Consumable spell - remove from hand
+		hand[slot_index] = null
+		consumed_spells += 1
+		print("CAST (consumed) from slot [", slot_index + 1, "]: ", spell.spell_name, " (", spell.effect_type, ", power: ", spell.power, ")")
+		print("  Spells consumed this match: ", consumed_spells)
+	
+	apply_spell_effect(spell)
+	update_mana_ui()
+	update_hand_ui()
+	print_hand()
+	
+	return true
+
+func add_spell_to_hand(spell: Spell) -> bool:
+	# Legacy function - find first empty slot
+	for i in range(MAX_HAND_SIZE):
+		if hand[i] == null:
+			assign_spell_to_slot(i, spell)
+			return true
+	
+	print("Hand is full! Use buttons 1-4 to overwrite a slot.")
+	return false
+
+func cast_spell_from_hand(slot_index: int) -> bool:
+	# Legacy function - redirects to new system
+	return cast_spell_from_slot(slot_index)
+
+func apply_spell_effect(spell: Spell):
+	# Apply the spell effect based on type
+	match spell.effect_type:
+		"damage":
+			print("  -> Dealing ", spell.power, " damage!")
+			# TODO: Apply damage to nearest enemy
+		"heal":
+			print("  -> Healing ", spell.power, " health!")
+			health = min(health + spell.power, 100)
+			update_health()
+		"buff":
+			print("  -> Applying buff: ", spell.spell_name)
+			# TODO: Apply buff effect
+		"debuff":
+			print("  -> Applying debuff: ", spell.spell_name)
+			# TODO: Apply debuff effect
+		"utility":
+			print("  -> Using utility: ", spell.spell_name)
+			# TODO: Apply utility effect
+
+func print_hand():
+	print("=== HAND [Consumed: ", consumed_spells, "] ===")
+	for i in range(MAX_HAND_SIZE):
+		var spell = hand[i]
+		if spell:
+			print("  [", i + 1, "] ", spell.spell_name, " - ", spell.mana_cost, " mana")
+		else:
+			print("  [", i + 1, "] (empty)")
+	print("=====================")
+
+func update_hand_ui():
+	# Update hand UI labels (create labels in Godot scene later)
+	for i in range(MAX_HAND_SIZE):
+		var label_name = "hand_slot_" + str(i + 1)
+		var label = get_node_or_null(label_name)
+		if label:
+			var spell = hand[i]
+			if spell:
+				label.text = "[" + str(i + 1) + "] " + spell.spell_name + " (" + str(spell.mana_cost) + ")"
+				label.visible = true
+			else:
+				label.text = "[" + str(i + 1) + "] Empty"
+				label.visible = false
