@@ -1,7 +1,5 @@
 extends CharacterBody2D
 
-const DeckManager = preload("res://scripts/deck_manager.gd")
-
 var enemy_inattack_range = false
 var enemy_attack_cooldown = true
 var health = 100
@@ -16,7 +14,8 @@ var max_mana = 99  # No limit mentioned, but setting a cap for UI
 const MANA_REGEN_INTERVAL = 10.0  # Seconds between mana regeneration
 
 # Deck system
-var deck_manager: DeckManager
+var deck_manager
+var river_manager
 
 const speed = 100
 var current_dir = "none"
@@ -36,6 +35,9 @@ func _ready():
 	# Initialize deck system
 	setup_deck()
 	
+	# Initialize river system
+	setup_river()
+	
 	# Initialize mana display
 	update_mana_ui()
 
@@ -46,9 +48,14 @@ func _physics_process(delta):
 	update_health()
 	update_mana_ui()
 	
-	# Test spell casting with 'E' key
+	# Test spell casting with Space bar
 	if Input.is_action_just_pressed("ui_accept"):  # Space bar
 		test_cast_spell()
+	
+	# Test orb picking with 'E' key
+	if Input.is_action_just_pressed("ui_cancel"):  # Escape key (temp, will change)
+		if river_manager:
+			test_pick_orb()
 
 	if health <= 0 and player_alive:
 		player_alive = false	#Add whatever it is you add when player dies
@@ -297,3 +304,54 @@ func test_cast_spell():
 			print("Failed to cast spell")
 	else:
 		print("No castable spells available (need more mana)")
+
+# ===== RIVER SYSTEM =====
+
+func setup_river():
+	# Create and initialize the river manager
+	var RiverManager = load("res://scripts/river_manager.gd")
+	river_manager = RiverManager.new()
+	river_manager.name = "RiverManager"
+	add_child(river_manager)
+	
+	# Connect deck manager to river
+	river_manager.set_deck_manager(deck_manager)
+	
+	# Connect signals
+	river_manager.river_refreshed.connect(_on_river_refreshed)
+	river_manager.orb_picked.connect(_on_orb_picked)
+	river_manager.river_run_complete.connect(_on_river_run_complete)
+	river_manager.timer_updated.connect(_on_river_timer_updated)
+	
+	# Start first river run at tier 1
+	river_manager.start_river_run(1)
+	
+	print("River system initialized!")
+
+func _on_river_refreshed(tier: int):
+	print("RIVER REFRESHED - Tier ", tier, " spells now available!")
+
+func _on_orb_picked(orb_index: int, spell: Spell, is_player: bool):
+	if is_player:
+		print("Player picked orb ", orb_index, ": ", spell.spell_name)
+		# Add spell to player's hand (to be implemented)
+	else:
+		print("Opponent picked orb ", orb_index)
+
+func _on_river_run_complete(tier: int):
+	print("RIVER RUN COMPLETE - Tier ", tier, " ended. New tier starting...")
+
+func _on_river_timer_updated(_time_left: float):
+	# Update river timer UI (to be implemented)
+	pass
+
+func test_pick_orb():
+	# Test function to pick the first available player orb
+	var player_orbs = river_manager.get_player_orbs()
+	if player_orbs.size() > 0:
+		var orb = player_orbs[0]
+		var spell = river_manager.pick_orb(orb.index, true)
+		if spell:
+			print("Picked up: ", spell.spell_name, " (Cost: ", spell.mana_cost, ")")
+	else:
+		print("No player orbs available to pick!")
