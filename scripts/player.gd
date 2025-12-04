@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+const DeckManager = preload("res://scripts/deck_manager.gd")
+
 var enemy_inattack_range = false
 var enemy_attack_cooldown = true
 var health = 100
@@ -12,6 +14,9 @@ var can_take_damage = true
 var mana = 0
 var max_mana = 99  # No limit mentioned, but setting a cap for UI
 const MANA_REGEN_INTERVAL = 10.0  # Seconds between mana regeneration
+
+# Deck system
+var deck_manager: DeckManager
 
 const speed = 100
 var current_dir = "none"
@@ -28,6 +33,9 @@ func _ready():
 	# Setup mana regeneration timer
 	setup_mana_timer()
 	
+	# Initialize deck system
+	setup_deck()
+	
 	# Initialize mana display
 	update_mana_ui()
 
@@ -37,7 +45,10 @@ func _physics_process(delta):
 	attack()
 	update_health()
 	update_mana_ui()
-
+	
+	# Test spell casting with 'E' key
+	if Input.is_action_just_pressed("ui_accept"):  # Space bar
+		test_cast_spell()
 
 	if health <= 0 and player_alive:
 		player_alive = false	#Add whatever it is you add when player dies
@@ -250,3 +261,39 @@ func update_mana_ui():
 		mana_label.text = "Mana: " + str(mana)
 	else:
 		print("WARNING: mana_label not found!")
+
+# ===== DECK SYSTEM =====
+
+func setup_deck():
+	# Create and initialize the deck manager
+	deck_manager = DeckManager.new()
+	deck_manager.name = "DeckManager"
+	add_child(deck_manager)
+	
+	# Connect signals
+	deck_manager.deck_refreshed.connect(_on_deck_refreshed)
+	deck_manager.spell_cast.connect(_on_spell_cast)
+	
+	print("Deck system initialized!")
+
+func _on_deck_refreshed():
+	print("DECK REFRESHED - All 15 spells available again!")
+
+func _on_spell_cast(spell):
+	print("SPELL CAST: ", spell.spell_name, " for ", spell.power, " ", spell.effect_type)
+	# This is where spell effects will be applied
+	# For now, just deduct the mana cost
+	mana -= spell.mana_cost
+	update_mana_ui()
+
+func test_cast_spell():
+	# Test function to cast a random affordable spell
+	var castable = deck_manager.get_castable_spells(mana)
+	if castable.size() > 0:
+		var spell = castable[0]
+		if deck_manager.cast_spell(spell, mana):
+			print("Successfully cast ", spell.spell_name)
+		else:
+			print("Failed to cast spell")
+	else:
+		print("No castable spells available (need more mana)")
