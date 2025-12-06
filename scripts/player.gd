@@ -44,8 +44,11 @@ func _ready():
 	# Initialize river system
 	setup_river()
 	
-	# Initialize mana display
+	# Initialize all UI
 	update_mana_ui()
+	update_hand_ui()
+	update_river_ui()
+	update_deck_progress_ui()
 
 func _physics_process(delta):
 	player_movement(delta)
@@ -292,11 +295,19 @@ func _on_mana_timer_timeout():
 		print("Mana regenerated! Current mana: ", mana)
 
 func update_mana_ui():
-	var mana_label = get_node_or_null("mana_label")
+	# Find HUD dynamically from the scene tree
+	var hud = get_tree().root.find_child("HUD", true, false)
+	if not hud:
+		print("WARNING: HUD CanvasLayer not found in scene tree")
+		return
+	
+	# Try to find mana_label under HUD
+	var mana_label = hud.find_child("mana_label", true, false)
+	
 	if mana_label:
 		mana_label.text = "Mana: " + str(mana)
 	else:
-		print("WARNING: mana_label not found!")
+		print("WARNING: mana_label not found under HUD")
 
 # ===== DECK SYSTEM =====
 
@@ -359,19 +370,29 @@ func setup_river():
 
 func _on_river_refreshed(run_number: int):
 	print("RIVER REFRESHED - Run ", run_number + 1, "/5 ready!")
+	update_river_ui()
 
 func _on_orb_picked(orb_index: int, spell: Spell, is_player: bool):
 	if is_player:
 		print("Player picked orb ", orb_index, ": ", spell.spell_name)
+		update_deck_progress_ui()
 	else:
 		print("Opponent picked orb ", orb_index)
 
 func _on_river_run_complete(run_number: int):
 	print("RIVER RUN COMPLETE - Run ", run_number + 1, " ended. Next run starting...")
+	update_river_ui()
 
-func _on_river_timer_updated(_time_left: float):
-	# Update river timer UI (to be implemented)
-	pass
+func _on_river_timer_updated(time_left: float):
+	# Find HUD dynamically
+	var hud = get_tree().root.find_child("HUD", true, false)
+	if not hud:
+		return
+	
+	# Update river timer UI
+	var timer_label = hud.find_child("river_timer_label", true, false)
+	if timer_label:
+		timer_label.text = str(int(time_left)) + "s"
 
 func test_pick_orb():
 	# Test function to pick the first available player orb
@@ -499,10 +520,15 @@ func print_hand():
 	print("=====================")
 
 func update_hand_ui():
-	# Update hand UI labels (create labels in Godot scene later)
+	# Find HUD dynamically
+	var hud = get_tree().root.find_child("HUD", true, false)
+	if not hud:
+		return
+	
+	# Update hand UI labels
 	for i in range(MAX_HAND_SIZE):
 		var label_name = "hand_slot_" + str(i + 1)
-		var label = get_node_or_null(label_name)
+		var label = hud.find_child(label_name, true, false)
 		if label:
 			var spell = hand[i]
 			if spell:
@@ -510,4 +536,30 @@ func update_hand_ui():
 				label.visible = true
 			else:
 				label.text = "[" + str(i + 1) + "] Empty"
-				label.visible = false
+				label.visible = true
+
+func update_river_ui():
+	# Find HUD dynamically
+	var hud = get_tree().root.find_child("HUD", true, false)
+	if not hud:
+		return
+	
+	# Update river run indicator
+	if river_manager:
+		var run_label = hud.find_child("river_run_label", true, false)
+		if run_label:
+			var current_run = river_manager.current_run
+			run_label.text = "Run " + str(current_run + 1) + "/5"
+
+func update_deck_progress_ui():
+	# Find HUD dynamically
+	var hud = get_tree().root.find_child("HUD", true, false)
+	if not hud:
+		return
+	
+	# Update deck progress
+	if deck_manager:
+		var progress_label = hud.find_child("deck_progress_label", true, false)
+		if progress_label:
+			var available = deck_manager.available_spells.size()
+			progress_label.text = "Deck: " + str(available) + "/15"

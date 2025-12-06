@@ -536,13 +536,6 @@ show_percentage = false
 wait_time = 5.0
 autostart = true
 
-[node name="mana_label" type="Label" parent="."]
-offset_left = -31.0
-offset_top = -63.0
-offset_right = 31.0
-offset_bottom = -40.0
-text = "Mana: 0"
-
 [connection signal="body_entered" from="player_hitbox" to="." method="_on_player_hitbox_body_entered"]
 [connection signal="body_exited" from="player_hitbox" to="." method="_on_player_hitbox_body_exited"]
 [connection signal="timeout" from="player_hitbox/attack_cooldown" to="." method="_on_attack_cooldown_timeout"]
