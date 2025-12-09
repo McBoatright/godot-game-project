@@ -357,11 +357,21 @@ func setup_river():
 	# Connect deck manager to river
 	river_manager.set_deck_manager(deck_manager)
 	
+	# Connect world node for spawning visual orbs
+	var world = get_parent()
+	if world:
+		river_manager.set_world_node(world)
+	else:
+		print("WARNING: World node not found in setup_river!")
+	
 	# Connect signals
 	river_manager.river_refreshed.connect(_on_river_refreshed)
 	river_manager.orb_picked.connect(_on_orb_picked)
 	river_manager.river_run_complete.connect(_on_river_run_complete)
 	river_manager.timer_updated.connect(_on_river_timer_updated)
+	
+	# Delay river start to next frame to ensure world is ready
+	await get_tree().process_frame
 	
 	# Start first river run (run 0 = 1-cost only)
 	river_manager.start_river_run(0)
@@ -411,18 +421,34 @@ func handle_slot_action(slot_index: int):
 	# Unified function: Pick up spell to slot OR cast from slot
 	# Priority: If player is near orbs, pick up. Otherwise, cast.
 	
-	if river_manager:
-		var player_orbs = river_manager.get_player_orbs()
-		if player_orbs.size() > 0:
-			# Player has orbs available - PICK UP mode
-			var orb = player_orbs[0]  # Pick first available orb
-			var spell = river_manager.pick_orb(orb.index, true)
-			if spell:
-				assign_spell_to_slot(slot_index, spell)
-			return
+	# Check if player is near any orbs
+	var nearby_orb = find_nearby_orb()
+	if nearby_orb:
+		# Player is near an orb - PICK UP mode
+		pickup_nearby_orb(nearby_orb, slot_index)
+		return
 	
-	# No orbs to pick up - CAST mode
+	# No orbs nearby - CAST mode
 	cast_spell_from_slot(slot_index)
+
+func find_nearby_orb():
+	# Find a player orb that the player is standing near
+	if not river_manager:
+		return null
+	
+	var orbs = get_tree().get_nodes_in_group("spell_orbs")
+	for orb in orbs:
+		if orb.has_method("is_player_near") and orb.is_player_near() and orb.is_player_orb:
+			return orb
+	return null
+
+func pickup_nearby_orb(orb, slot_index: int):
+	# Pick up the orb and assign to slot
+	if orb and orb.spell and river_manager:
+		var spell = river_manager.pick_orb(orb.orb_index, true)
+		if spell:
+			assign_spell_to_slot(slot_index, spell)
+			orb.queue_free()  # Remove orb from world
 
 func assign_spell_to_slot(slot_index: int, spell: Spell):
 	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:

@@ -17,9 +17,13 @@ const RUN_PATTERNS = [
 
 # River state
 var river_orbs: Array = []  # Array of 6 spell orbs (or null if picked)
+var visual_orbs: Array = []  # Array of spawned orb nodes in the world
 var current_run: int = 0  # Current run number (0-4)
 var run_timer: Timer
 var time_remaining: float = RUN_DURATION
+
+# Orb spawning
+var world_node = null  # Reference to world scene for spawning orbs
 
 # Signals
 signal river_refreshed(run_number: int)
@@ -51,15 +55,22 @@ func set_deck_manager(dm):
 	deck_manager = dm
 	print("DeckManager connected to River")
 
+func set_world_node(world):
+	world_node = world
+	print("World node connected to River for orb spawning")
+
 func start_river_run(run_number: int = 0):
 	if run_number < 0 or run_number >= NUM_RUNS:
 		run_number = 0
 	
 	current_run = run_number
 	time_remaining = RUN_DURATION
+	
+	print("Starting river run ", run_number + 1, "/", NUM_RUNS)
 	populate_river(run_number)
-	run_timer.start()
+	
 	print("River run started - Run ", run_number + 1, "/", NUM_RUNS, " (", RUN_DURATION, " seconds)")
+	run_timer.start()
 
 func populate_river(run_number: int):
 	river_orbs.clear()
@@ -88,24 +99,88 @@ func populate_river(run_number: int):
 	# Shuffle available spells
 	available.shuffle()
 	
+	print("DEBUG: Available spells for this run: ", available.size())
+	
 	# Fill 6 orbs: 3 player (even indices), 3 opponent (odd indices)
+	# If we have fewer spells than slots, reuse spells to fill all 6 slots
 	for i in range(RIVER_SIZE):
 		var is_player_orb = (i % 2 == 0)  # 0,2,4 = player; 1,3,5 = opponent
 		
 		if available.size() > 0:
-			var spell = available.pop_front()
+			# Use modulo to wrap around if we have fewer spells than slots
+			var spell_index = i % available.size()
+			var spell = available[spell_index]
 			river_orbs.append({
 				"spell": spell,
 				"is_player": is_player_orb,
 				"picked": false
 			})
 		else:
-			# Not enough spells left
+			# No spells available at all
 			river_orbs.append(null)
 	
 	river_refreshed.emit(run_number)
 	print("River populated with ", river_orbs.size(), " orbs (Run ", run_number + 1, ")")
 	print_river_state()
+	
+	# Spawn visual orbs in the world
+	spawn_visual_orbs()
+
+func spawn_visual_orbs():
+	# Clear any existing visual orbs
+	clear_visual_orbs()
+	
+	if not world_node:
+		print("WARNING: World node not set, can't spawn visual orbs")
+		return
+	
+	print("DEBUG: Spawning visual orbs, world_node exists")
+	
+	# Spawn orbs in center of map
+	var spawn_center = Vector2(320, 130)  # Shifted right from 280 to 320
+	print("DEBUG: Spawning orbs at map center: ", spawn_center)
+	
+	# Spawn pattern: Horizontal row in center of map
+	var spacing = 80.0  # Space between orbs (increased from 60)
+	var start_x = spawn_center.x - (RIVER_SIZE * spacing / 2)
+	
+	var orb_count = 0
+	for i in range(river_orbs.size()):
+		var orb_data = river_orbs[i]
+		if not orb_data or orb_data.picked:
+			print("DEBUG: Skipping orb ", i, " - null or picked")
+			continue
+		
+		print("DEBUG: Creating orb ", i, " - ", orb_data.spell.spell_name)
+		
+		# Calculate position in row
+		var spawn_pos = Vector2(start_x + (orb_count * spacing), spawn_center.y)
+		orb_count += 1
+		
+		print("DEBUG: Orb ", i, " spawn position: ", spawn_pos)
+		
+		# Create visual orb (load scene dynamically)
+		var orb_scene = load("res://scenes/spell_orb.tscn")
+		if not orb_scene:
+			print("ERROR: Could not load orb scene!")
+			continue
+		var orb_instance = orb_scene.instantiate()
+		orb_instance.position = spawn_pos
+		orb_instance.setup(orb_data.spell, orb_data.is_player, i)
+		
+		# Add to world with y_sort enabled
+		world_node.add_child(orb_instance)
+		orb_instance.z_index = 10  # Render above ground
+		visual_orbs.append(orb_instance)
+		print("DEBUG: Orb ", i, " added to world at z_index 10")
+	
+	print("Spawned ", visual_orbs.size(), " visual orbs in the world")
+
+func clear_visual_orbs():
+	for orb in visual_orbs:
+		if is_instance_valid(orb):
+			orb.queue_free()
+	visual_orbs.clear()
 
 func print_river_state():
 	print("=== RIVER STATE ===")
