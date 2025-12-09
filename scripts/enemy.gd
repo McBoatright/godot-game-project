@@ -8,6 +8,10 @@ var health = 100
 var player_inattack_zone = false
 var can_take_damage = true
 
+func _ready():
+	# Add to enemies group so spells can find us
+	add_to_group("enemies")
+
 
 func _physics_process(_delta):
 	deal_with_damage()
@@ -61,3 +65,12 @@ func deal_with_damage():
 
 func _on_take_damage_cooldown_timeout():
 	can_take_damage = true
+
+func take_spell_damage(damage: int):
+	# Take damage from player spells
+	health -= damage
+	print("Enemy took ", damage, " spell damage! Health: ", health, "/100")
+	
+	if health <= 0:
+		print("Enemy defeated!")
+		queue_free()

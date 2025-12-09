@@ -23,6 +23,11 @@ var hand: Array = [null, null, null, null]  # 4 slots, can be null
 var consumed_spells: int = 0  # Count of spells overwritten/cast (for synergy mechanics)
 var slot_cooldowns: Array = [0.0, 0.0, 0.0, 0.0]  # Prevent multiple triggers
 
+# Buff/Debuff system
+var active_buffs: Array = []  # Array of {name, duration, power}
+var speed_buff: float = 0.0  # Speed multiplier from buffs
+var defense_buff: float = 0.0  # Damage reduction from buffs
+
 const speed = 100
 var current_dir = "none"
 
@@ -61,6 +66,9 @@ func _physics_process(delta):
 	for i in range(4):
 		if slot_cooldowns[i] > 0:
 			slot_cooldowns[i] -= delta
+	
+	# Update active buffs/debuffs
+	update_buffs(delta)
 	
 	# Button-based spell pickup AND casting (Phantom Dust style)
 	# Press 1-4 to either pick up spell to that slot OR cast from that slot
@@ -519,21 +527,120 @@ func apply_spell_effect(spell: Spell):
 	# Apply the spell effect based on type
 	match spell.effect_type:
 		"damage":
-			print("  -> Dealing ", spell.power, " damage!")
-			# TODO: Apply damage to nearest enemy
+			apply_damage_spell(spell)
 		"heal":
-			print("  -> Healing ", spell.power, " health!")
-			health = min(health + spell.power, 100)
-			update_health()
+			apply_heal_spell(spell)
 		"buff":
-			print("  -> Applying buff: ", spell.spell_name)
-			# TODO: Apply buff effect
+			apply_buff_spell(spell)
 		"debuff":
-			print("  -> Applying debuff: ", spell.spell_name)
-			# TODO: Apply debuff effect
+			apply_debuff_spell(spell)
 		"utility":
-			print("  -> Using utility: ", spell.spell_name)
-			# TODO: Apply utility effect
+			apply_utility_spell(spell)
+
+func apply_damage_spell(spell: Spell):
+	# Find nearest enemy and deal damage
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	if enemies.size() == 0:
+		print("  -> No enemies to damage!")
+		return
+	
+	# Find closest enemy
+	var nearest_enemy = null
+	var nearest_distance = 999999.0
+	for enemy in enemies:
+		var distance = global_position.distance_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_enemy = enemy
+	
+	if nearest_enemy and nearest_enemy.has_method("take_spell_damage"):
+		nearest_enemy.take_spell_damage(spell.power)
+		print("  -> ", spell.spell_name, " dealt ", spell.power, " damage to enemy!")
+	else:
+		print("  -> Could not damage enemy")
+
+func apply_heal_spell(spell: Spell):
+	# Heal the player
+	var old_health = health
+	health = min(health + spell.power, 100)
+	var healed = health - old_health
+	print("  -> ", spell.spell_name, " healed ", healed, " health!")
+	update_health()
+
+func apply_buff_spell(spell: Spell):
+	# Apply a buff to the player
+	var buff_duration = 10.0  # 10 seconds
+	
+	match spell.spell_name:
+		"Shield", "Ward", "Full Barrier", "Divine Shield":
+			# Defense buffs
+			defense_buff += spell.power
+			active_buffs.append({"name": spell.spell_name, "duration": buff_duration, "type": "defense", "power": spell.power})
+			print("  -> ", spell.spell_name, " increased defense by ", spell.power, " for ", buff_duration, "s!")
+		"Haste":
+			# Speed buff
+			speed_buff += spell.power / 100.0  # Convert to multiplier
+			active_buffs.append({"name": spell.spell_name, "duration": buff_duration, "type": "speed", "power": spell.power})
+			print("  -> ", spell.spell_name, " increased speed by ", spell.power, "% for ", buff_duration, "s!")
+		_:
+			# Generic buff
+			active_buffs.append({"name": spell.spell_name, "duration": buff_duration, "type": "generic", "power": spell.power})
+			print("  -> Applied ", spell.spell_name, " buff!")
+
+func apply_debuff_spell(spell: Spell):
+	# Apply debuff to nearest enemy
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	if enemies.size() == 0:
+		print("  -> No enemies to debuff!")
+		return
+	
+	# Find closest enemy
+	var nearest_enemy = null
+	var nearest_distance = 999999.0
+	for enemy in enemies:
+		var distance = global_position.distance_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_enemy = enemy
+	
+	if nearest_enemy:
+		print("  -> Applied ", spell.spell_name, " debuff to enemy!")
+		# TODO: Implement enemy debuff system
+
+func apply_utility_spell(spell: Spell):
+	# Apply utility effect
+	match spell.spell_name:
+		"Drain", "Life Steal":
+			# Damage enemy and heal player
+			var enemies = get_tree().get_nodes_in_group("enemies")
+			if enemies.size() > 0:
+				var nearest_enemy = enemies[0]
+				if nearest_enemy.has_method("take_spell_damage"):
+					nearest_enemy.take_spell_damage(spell.power)
+					health = min(health + spell.power / 2, 100)  # Heal for half damage dealt
+					print("  -> ", spell.spell_name, " dealt ", spell.power, " damage and healed ", spell.power / 2, "!")
+					update_health()
+		_:
+			print("  -> Used ", spell.spell_name, "!")
+
+func update_buffs(delta: float):
+	# Update all active buffs, remove expired ones
+	var i = 0
+	while i < active_buffs.size():
+		var buff = active_buffs[i]
+		buff.duration -= delta
+		
+		if buff.duration <= 0:
+			# Buff expired - remove its effects
+			if buff.type == "defense":
+				defense_buff -= buff.power
+			elif buff.type == "speed":
+				speed_buff -= buff.power / 100.0
+			
+			print("Buff '", buff.name, "' expired!")
+			active_buffs.remove_at(i)
+		else:
+			i += 1
 
 func print_hand():
 	print("=== HAND [Consumed: ", consumed_spells, "] ===")
@@ -587,5 +694,6 @@ func update_deck_progress_ui():
 	if deck_manager:
 		var progress_label = hud.find_child("deck_progress_label", true, false)
 		if progress_label:
+			var total = deck_manager.all_spells.size()
 			var available = deck_manager.available_spells.size()
-			progress_label.text = "Deck: " + str(available) + "/15"
+			progress_label.text = "Deck: " + str(available) + "/" + str(total)

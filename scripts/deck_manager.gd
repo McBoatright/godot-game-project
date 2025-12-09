@@ -16,48 +16,37 @@ func _ready():
 	refresh_deck()
 
 func initialize_spells():
-	# This will be populated with 15 unique spells
-	# For now, creating placeholder spells with varied costs
+	# 15 total spells - 3 per river run (tier)
+	# Run 1: 1 mana spells
+	# Run 2: 2 mana spells
+	# Run 3: 3 mana spells
+	# Run 4: 4 mana spells
+	# Run 5: 5 mana spells
 	
-	# Tier 1 spells (1 mana) - 6 spells (enough for full river run 1)
+	# Tier 1 spells (1 mana) - 3 spells for river run 1
 	all_spells.append(Spell.new("Spark", 1, "damage", "Quick lightning bolt", 15, false))
 	all_spells.append(Spell.new("Minor Heal", 1, "heal", "Small health recovery", 10, true))
 	all_spells.append(Spell.new("Shield", 1, "buff", "Temporary defense boost", 5, true))
-	all_spells.append(Spell.new("Poke", 1, "damage", "Tiny damage", 10, false))
-	all_spells.append(Spell.new("Rejuvenate", 1, "heal", "Slight heal over time", 8, true))
-	all_spells.append(Spell.new("Ward", 1, "buff", "Minor protection", 3, true))
 	
-	# Tier 2 spells (2 mana) - 6 spells (enough for river run 2)
+	# Tier 2 spells (2 mana) - 3 spells for river run 2
 	all_spells.append(Spell.new("Fireball", 2, "damage", "Moderate fire damage", 30))
 	all_spells.append(Spell.new("Ice Shard", 2, "damage", "Cold damage with slow", 25))
 	all_spells.append(Spell.new("Haste", 2, "buff", "Speed boost", 10))
-	all_spells.append(Spell.new("Poison Dart", 2, "damage", "Damage over time", 20))
-	all_spells.append(Spell.new("Cure", 2, "heal", "Remove debuffs", 15))
-	all_spells.append(Spell.new("Fortify", 2, "buff", "Increase defense", 12))
 	
-	# Tier 3 spells (3 mana) - 6 spells (enough for river run 3)
+	# Tier 3 spells (3 mana) - 3 spells for river run 3
 	all_spells.append(Spell.new("Lightning Strike", 3, "damage", "Heavy lightning damage", 50))
 	all_spells.append(Spell.new("Greater Heal", 3, "heal", "Restore significant health", 40))
 	all_spells.append(Spell.new("Weaken", 3, "debuff", "Reduce enemy damage", 15))
-	all_spells.append(Spell.new("Chain Lightning", 3, "damage", "Multi-target lightning", 45))
-	all_spells.append(Spell.new("Restoration", 3, "heal", "Strong healing", 35))
-	all_spells.append(Spell.new("Slow", 3, "debuff", "Reduce enemy speed", 10))
 	
-	# Tier 4 spells (4 mana) - 6 spells (enough for river run 4)
+	# Tier 4 spells (4 mana) - 3 spells for river run 4
 	all_spells.append(Spell.new("Meteor", 4, "damage", "Massive area damage", 70))
 	all_spells.append(Spell.new("Full Barrier", 4, "buff", "Strong damage absorption", 30))
 	all_spells.append(Spell.new("Drain", 4, "utility", "Steal enemy health", 35))
-	all_spells.append(Spell.new("Inferno", 4, "damage", "Burning damage", 65))
-	all_spells.append(Spell.new("Divine Shield", 4, "buff", "Absorb damage", 40))
-	all_spells.append(Spell.new("Life Steal", 4, "utility", "Damage and heal", 30))
 	
-	# Tier 5 spells (5 mana) - 6 spells (enough for river run 5)
+	# Tier 5 spells (5 mana) - 3 spells for river run 5
 	all_spells.append(Spell.new("Annihilation", 5, "damage", "Ultimate destruction", 100))
 	all_spells.append(Spell.new("Resurrection", 5, "heal", "Full health restore", 100))
 	all_spells.append(Spell.new("Time Stop", 5, "utility", "Freeze all enemies", 0))
-	all_spells.append(Spell.new("Apocalypse", 5, "damage", "Massive destruction", 95))
-	all_spells.append(Spell.new("Full Restore", 5, "heal", "Complete recovery", 90))
-	all_spells.append(Spell.new("Invincibility", 5, "buff", "Temporary immunity", 50))
 	
 	print("Deck initialized with ", all_spells.size(), " spells")
 
