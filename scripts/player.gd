@@ -28,6 +28,10 @@ var active_buffs: Array = []  # Array of {name, duration, power}
 var speed_buff: float = 0.0  # Speed multiplier from buffs
 var defense_buff: float = 0.0  # Damage reduction from buffs
 
+# Shield system
+var shield_health: int = 0  # Current shield HP (blocks damage)
+var shield_visual = null  # Visual shield sprite
+
 const speed = 100
 var current_dir = "none"
 
@@ -217,10 +221,25 @@ func _on_player_hitbox_body_exited(body: Node2D) -> void:
 
 func enemy_attack():
 	if enemy_inattack_range and enemy_attack_cooldown == true:
-		health = health - 20
+		take_damage(20)
 		enemy_attack_cooldown = false
 		$player_hitbox/attack_cooldown.start()
-		print(health)
+
+func take_damage(damage: int):
+	# Apply damage, shield absorbs first
+	if shield_health > 0:
+		var blocked = min(damage, shield_health)
+		shield_health -= blocked
+		damage -= blocked
+		print("Shield blocked ", blocked, " damage! Shield: ", shield_health, "/3")
+		
+		if shield_health <= 0:
+			remove_shield_visual()
+	
+	# Apply remaining damage to health
+	if damage > 0:
+		health -= damage
+		print("Took ", damage, " damage! Health: ", health, "/100")
 
 
 func _on_attack_cooldown_timeout() -> void:
@@ -541,6 +560,8 @@ func apply_spell_effect(spell: Spell):
 			apply_debuff_spell(spell)
 		"utility":
 			apply_utility_spell(spell)
+		"shield":
+			apply_shield_spell(spell)
 
 func apply_projectile_spell(spell: Spell):
 	# Spawn a projectile in the direction player is facing
@@ -681,6 +702,33 @@ func update_buffs(delta: float):
 			active_buffs.remove_at(i)
 		else:
 			i += 1
+
+func apply_shield_spell(spell: Spell):
+	# Add shield HP and spawn visual
+	shield_health = spell.power
+	print("  -> Shield activated! Blocks ", shield_health, " damage")
+	spawn_shield_visual()
+
+func spawn_shield_visual():
+	# Remove old shield if exists
+	remove_shield_visual()
+	
+	# Create circular shield sprite around player
+	shield_visual = Sprite2D.new()
+	var shield_texture = load("res://Art/sprites/objects/rock_in_water_01.png")
+	shield_visual.texture = shield_texture
+	shield_visual.scale = Vector2(1.5, 1.5)
+	shield_visual.modulate = Color(0.5, 0.5, 1.0, 0.6)  # Blue semi-transparent
+	shield_visual.z_index = -1  # Behind player
+	add_child(shield_visual)
+	
+	print("Shield visual spawned")
+
+func remove_shield_visual():
+	if shield_visual:
+		shield_visual.queue_free()
+		shield_visual = null
+		print("Shield broken!")
 
 func print_hand():
 	print("=== HAND [Consumed: ", consumed_spells, "] ===")

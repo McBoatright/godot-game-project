@@ -8,11 +8,13 @@ radius = 8.0
 
 [node name="Projectile" type="Area2D"]
 collision_layer = 16
-collision_mask = 10
+collision_mask = 2
+monitoring = true
+monitorable = true
 script = ExtResource("1_v8j3k")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.3, 0.3)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("2_rock")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

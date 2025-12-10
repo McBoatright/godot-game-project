@@ -16,37 +16,28 @@ func _ready():
 	refresh_deck()
 
 func initialize_spells():
-	# 15 total spells - 3 per river run (tier)
-	# Run 1: 1 mana spells
-	# Run 2: 2 mana spells
-	# Run 3: 3 mana spells
-	# Run 4: 4 mana spells
-	# Run 5: 5 mana spells
+	# TESTING DECK: 8 Shield + 7 Fireball = 15 total
+	# Shield: 3 mana, blocks 3 damage, one-time use
+	# Fireball: 2 mana, projectile, reusable
 	
-	# Tier 1 spells (1 mana) - 3 spells for river run 1
-	all_spells.append(Spell.new("Spark", 1, "damage", "Quick lightning bolt", 15, false))
-	all_spells.append(Spell.new("Minor Heal", 1, "heal", "Small health recovery", 10, true))
-	all_spells.append(Spell.new("Shield", 1, "buff", "Temporary defense boost", 5, true))
+	# 8 Shield spells (3 mana)
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
+	all_spells.append(Spell.new("Shield", 3, "shield", "Blocks 3 damage", 3, false))
 	
-	# Tier 2 spells (2 mana) - 3 spells for river run 2
+	# 7 Fireball spells (2 mana)
 	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
-	all_spells.append(Spell.new("Ice Shard", 2, "damage", "Cold damage with slow", 25))
-	all_spells.append(Spell.new("Haste", 2, "buff", "Speed boost", 10))
-	
-	# Tier 3 spells (3 mana) - 3 spells for river run 3
-	all_spells.append(Spell.new("Lightning Strike", 3, "damage", "Heavy lightning damage", 50))
-	all_spells.append(Spell.new("Greater Heal", 3, "heal", "Restore significant health", 40))
-	all_spells.append(Spell.new("Weaken", 3, "debuff", "Reduce enemy damage", 15))
-	
-	# Tier 4 spells (4 mana) - 3 spells for river run 4
-	all_spells.append(Spell.new("Meteor", 4, "damage", "Massive area damage", 70))
-	all_spells.append(Spell.new("Full Barrier", 4, "buff", "Strong damage absorption", 30))
-	all_spells.append(Spell.new("Drain", 4, "utility", "Steal enemy health", 35))
-	
-	# Tier 5 spells (5 mana) - 3 spells for river run 5
-	all_spells.append(Spell.new("Annihilation", 5, "damage", "Ultimate destruction", 100))
-	all_spells.append(Spell.new("Resurrection", 5, "heal", "Full health restore", 100))
-	all_spells.append(Spell.new("Time Stop", 5, "utility", "Freeze all enemies", 0))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
 	
 	print("Deck initialized with ", all_spells.size(), " spells")
 

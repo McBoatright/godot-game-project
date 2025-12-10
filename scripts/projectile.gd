@@ -8,6 +8,8 @@ var lifetime: float = 3.0
 var caster = null  # Who cast this spell (player or enemy)
 
 func _ready():
+	print("Projectile created - damage: ", damage, " speed: ", speed)
+	
 	# Auto-destroy after lifetime
 	var timer = Timer.new()
 	timer.wait_time = lifetime
@@ -18,6 +20,9 @@ func _ready():
 	
 	# Connect collision detection
 	body_entered.connect(_on_body_entered)
+	area_entered.connect(_on_area_entered)
+	
+	print("Projectile collision_mask: ", collision_mask, " collision_layer: ", collision_layer)
 
 func _physics_process(delta):
 	# Move projectile in direction
@@ -57,6 +62,28 @@ func _on_body_entered(body: Node2D):
 		print("Hit obstacle")
 		queue_free()
 
+func _on_area_entered(area: Area2D):
+	print("Projectile hit area: ", area.name)
+	
+	# Ignore detection_area (enemy chase detection) - only hit enemy_hitbox
+	if area.name == "detection_area":
+		print("  Ignoring detection_area")
+		return
+	
+	# Walk up the parent chain to find the enemy
+	var node = area
+	while node:
+		if node.is_in_group("enemies"):
+			if node.has_method("take_spell_damage"):
+				node.take_spell_damage(damage)
+				print("Area collision - dealt ", damage, " damage to ", node.name, "!")
+			queue_free()
+			return
+		node = node.get_parent()
+	
+	print("  Hit area but couldn't find enemy in parent chain")
+
 func _on_lifetime_timeout():
 	# Projectile expired without hitting anything
+	print("Projectile lifetime expired")
 	queue_free()

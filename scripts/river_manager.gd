@@ -8,11 +8,11 @@ const NUM_RUNS = 5  # 5 different run patterns before looping
 
 # River run patterns [tier1, tier2] for each run
 const RUN_PATTERNS = [
-	[1, 1],      # Run 1: Only 1-cost spells
-	[2, 2],      # Run 2: Only 2-cost spells
-	[3, 3],      # Run 3: Only 3-cost spells
-	[4, 4],      # Run 4: Only 4-cost spells
-	[5, 5]       # Run 5: Only 5-cost spells
+	[2, 2],      # Run 1: 2-mana (Fireball)
+	[3, 3],      # Run 2: 3-mana (Shield)
+	[2, 3],      # Run 3: 2-3 mana (Both)
+	[2, 3],      # Run 4: 2-3 mana (Both)
+	[2, 3]       # Run 5: 2-3 mana (Both)
 ]
 
 # River state
