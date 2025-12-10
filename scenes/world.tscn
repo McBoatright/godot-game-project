@@ -184,7 +184,7 @@ offset_top = 2.0
 offset_right = 390.0
 offset_bottom = 25.0
 theme_override_font_sizes/font_size = 11
-text = "30s"
+text = "10s"
 
 [node name="ProgressUI" type="Control" parent="HUD/GameUI"]
 anchors_preset = 0

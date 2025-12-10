@@ -3,16 +3,16 @@ class_name RiverManager
 
 # River configuration
 const RIVER_SIZE = 6  # 6 spell orbs in the river (3 player, 3 opponent)
-const RUN_DURATION = 30.0  # 30 seconds per river run
+const RUN_DURATION = 10.0  # 10 seconds per river run (for testing)
 const NUM_RUNS = 5  # 5 different run patterns before looping
 
 # River run patterns [tier1, tier2] for each run
 const RUN_PATTERNS = [
-	[1, 1],      # Run 1: Only 1-cost
-	[1, 2],      # Run 2: 1-cost and 2-cost
-	[2, 3],      # Run 3: 2-cost and 3-cost
-	[3, 4],      # Run 4: 3-cost and 4-cost
-	[1, 5]       # Run 5: Any cost (1-5)
+	[1, 1],      # Run 1: Only 1-cost spells
+	[2, 2],      # Run 2: Only 2-cost spells
+	[3, 3],      # Run 3: Only 3-cost spells
+	[4, 4],      # Run 4: Only 4-cost spells
+	[5, 5]       # Run 5: Only 5-cost spells
 ]
 
 # River state
@@ -21,6 +21,9 @@ var visual_orbs: Array = []  # Array of spawned orb nodes in the world
 var current_run: int = 0  # Current run number (0-4)
 var run_timer: Timer
 var time_remaining: float = RUN_DURATION
+
+# Fixed river runs - each run has its spells set at match start
+var fixed_river_runs: Array = [[], [], [], [], []]  # 5 runs, each with 6 orb slots
 
 # Orb spawning
 var world_node = null  # Reference to world scene for spawning orbs
@@ -53,11 +56,60 @@ func _process(_delta):
 
 func set_deck_manager(dm):
 	deck_manager = dm
+	# Connect to deck refresh signal
+	if deck_manager:
+		deck_manager.deck_refreshed.connect(_on_deck_refreshed)
 	print("DeckManager connected to River")
 
 func set_world_node(world):
 	world_node = world
 	print("World node connected to River for orb spawning")
+
+func initialize_fixed_runs():
+	# Initialize all 5 river runs with their fixed spells at match start
+	# This ensures spells stay consistent across the entire match
+	
+	if not deck_manager:
+		print("ERROR: DeckManager not set!")
+		return
+	
+	print("=== INITIALIZING FIXED RIVER RUNS ===")
+	
+	for run_number in range(NUM_RUNS):
+		var pattern = RUN_PATTERNS[run_number]
+		var tier1 = pattern[0]
+		var tier2 = pattern[1]
+		
+		# Get spells for this run's tiers
+		var run_spells = []
+		for tier in range(tier1, tier2 + 1):
+			var tier_spells = deck_manager.get_spells_by_tier(tier)
+			for spell in tier_spells:
+				run_spells.append(spell)
+		
+		print("Run ", run_number + 1, ": Found ", run_spells.size(), " spells (tiers ", tier1, "-", tier2, ")")
+		
+		# Assign spells to 6 orb slots (3 player, 3 opponent)
+		# Even indices = player, odd indices = opponent
+		for i in range(RIVER_SIZE):
+			var is_player_orb = (i % 2 == 0)
+			
+			if run_spells.size() > 0:
+				# Use modulo to cycle through available spells if we have fewer than 6
+				var spell_index = i % run_spells.size()
+				var spell = run_spells[spell_index]
+				fixed_river_runs[run_number].append({
+					"spell": spell,
+					"is_player": is_player_orb,
+					"picked": false
+				})
+				print("  Orb ", i, ": ", spell.spell_name, " (", "PLAYER" if is_player_orb else "OPPONENT", ")")
+			else:
+				# No spells available at all
+				fixed_river_runs[run_number].append(null)
+				print("  Orb ", i, ": EMPTY (no spells available)")
+	
+	print("=== RIVER RUNS INITIALIZED ===")
 
 func start_river_run(run_number: int = 0):
 	if run_number < 0 or run_number >= NUM_RUNS:
@@ -67,60 +119,25 @@ func start_river_run(run_number: int = 0):
 	time_remaining = RUN_DURATION
 	
 	print("Starting river run ", run_number + 1, "/", NUM_RUNS)
-	populate_river(run_number)
+	load_river_from_fixed_run(run_number)
 	
 	print("River run started - Run ", run_number + 1, "/", NUM_RUNS, " (", RUN_DURATION, " seconds)")
 	run_timer.start()
 
-func populate_river(run_number: int):
+func load_river_from_fixed_run(run_number: int):
+	# Load the fixed river run (with current picked state)
 	river_orbs.clear()
 	
-	if not deck_manager:
-		print("ERROR: DeckManager not set!")
+	if fixed_river_runs[run_number].is_empty():
+		print("ERROR: Fixed run ", run_number, " is empty!")
 		return
 	
-	# Get the tier pattern for this run
-	var pattern = RUN_PATTERNS[run_number]
-	var tier1 = pattern[0]
-	var tier2 = pattern[1]
-	
-	# Get available spells for these tiers
-	var available = []
-	for tier in range(tier1, tier2 + 1):
-		var tier_spells = deck_manager.get_spells_by_tier(tier)
-		for spell in tier_spells:
-			available.append(spell)
-	
-	if available.is_empty():
-		print("No spells available for Run ", run_number + 1, " - all picked up!")
-		river_refreshed.emit(run_number)
-		return
-	
-	# Shuffle available spells
-	available.shuffle()
-	
-	print("DEBUG: Available spells for this run: ", available.size())
-	
-	# Fill 6 orbs: 3 player (even indices), 3 opponent (odd indices)
-	# If we have fewer spells than slots, reuse spells to fill all 6 slots
-	for i in range(RIVER_SIZE):
-		var is_player_orb = (i % 2 == 0)  # 0,2,4 = player; 1,3,5 = opponent
-		
-		if available.size() > 0:
-			# Use modulo to wrap around if we have fewer spells than slots
-			var spell_index = i % available.size()
-			var spell = available[spell_index]
-			river_orbs.append({
-				"spell": spell,
-				"is_player": is_player_orb,
-				"picked": false
-			})
-		else:
-			# No spells available at all
-			river_orbs.append(null)
+	# Copy the fixed run's orbs (preserving picked state)
+	for orb_data in fixed_river_runs[run_number]:
+		river_orbs.append(orb_data)
 	
 	river_refreshed.emit(run_number)
-	print("River populated with ", river_orbs.size(), " orbs (Run ", run_number + 1, ")")
+	print("River loaded from fixed run ", run_number + 1)
 	print_river_state()
 	
 	# Spawn visual orbs in the world
@@ -144,7 +161,6 @@ func spawn_visual_orbs():
 	var spacing = 80.0  # Space between orbs (increased from 60)
 	var start_x = spawn_center.x - (RIVER_SIZE * spacing / 2)
 	
-	var orb_count = 0
 	for i in range(river_orbs.size()):
 		var orb_data = river_orbs[i]
 		if not orb_data or orb_data.picked:
@@ -153,9 +169,8 @@ func spawn_visual_orbs():
 		
 		print("DEBUG: Creating orb ", i, " - ", orb_data.spell.spell_name)
 		
-		# Calculate position in row
-		var spawn_pos = Vector2(start_x + (orb_count * spacing), spawn_center.y)
-		orb_count += 1
+		# Calculate position in row - use orb index i to keep empty spaces for picked orbs
+		var spawn_pos = Vector2(start_x + (i * spacing), spawn_center.y)
 		
 		print("DEBUG: Orb ", i, " spawn position: ", spawn_pos)
 		
@@ -254,4 +269,14 @@ func force_end_run():
 	if run_timer and not run_timer.is_stopped():
 		run_timer.stop()
 		_on_river_run_timeout()
-		_on_river_run_timeout()
+
+func _on_deck_refreshed():
+	# When deck refreshes, reset all picked states in fixed river runs
+	print("=== RIVER: Deck refreshed, resetting all orb picked states ===")
+	for run in fixed_river_runs:
+		for orb_data in run:
+			if orb_data:
+				orb_data.picked = false
+	
+	# Don't reload current run - wait for next river run cycle to show refreshed orbs
+	print("  -> Orbs will reappear on next river run cycle")

@@ -378,6 +378,9 @@ func setup_river():
 	river_manager.river_run_complete.connect(_on_river_run_complete)
 	river_manager.timer_updated.connect(_on_river_timer_updated)
 	
+	# Initialize fixed river runs (must be done before starting first run)
+	river_manager.initialize_fixed_runs()
+	
 	# Delay river start to next frame to ensure world is ready
 	await get_tree().process_frame
 	
