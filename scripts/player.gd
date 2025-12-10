@@ -529,6 +529,8 @@ func cast_spell_from_hand(slot_index: int) -> bool:
 func apply_spell_effect(spell: Spell):
 	# Apply the spell effect based on type
 	match spell.effect_type:
+		"projectile":
+			apply_projectile_spell(spell)
 		"damage":
 			apply_damage_spell(spell)
 		"heal":
@@ -540,8 +542,43 @@ func apply_spell_effect(spell: Spell):
 		"utility":
 			apply_utility_spell(spell)
 
+func apply_projectile_spell(spell: Spell):
+	# Spawn a projectile in the direction player is facing
+	var projectile_scene = load("res://scenes/projectile.tscn")
+	var projectile = projectile_scene.instantiate()
+	
+	# Determine direction based on current_dir (player facing direction)
+	var direction = Vector2.ZERO
+	match current_dir:
+		"right", "side_right":
+			direction = Vector2.RIGHT
+		"left", "side_left":
+			direction = Vector2.LEFT
+		"down":
+			direction = Vector2.DOWN
+		"up":
+			direction = Vector2.UP
+		"up_right", "diagonal_up_right":
+			direction = Vector2(1, -1).normalized()
+		"up_left", "diagonal_up_left":
+			direction = Vector2(-1, -1).normalized()
+		"down_right", "diagonal_down_right":
+			direction = Vector2(1, 1).normalized()
+		"down_left", "diagonal_down_left":
+			direction = Vector2(-1, 1).normalized()
+		_:
+			direction = Vector2.RIGHT  # Default right if no direction set
+	
+	# Setup projectile
+	projectile.setup(global_position, direction, spell.power, self)
+	
+	# Add to world
+	get_parent().add_child(projectile)
+	
+	print("  -> ", spell.spell_name, " projectile fired ", current_dir, "!")
+
 func apply_damage_spell(spell: Spell):
-	# Find nearest enemy and deal damage
+	# Instant damage to nearest enemy (for non-projectile spells)
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	if enemies.size() == 0:
 		print("  -> No enemies to damage!")

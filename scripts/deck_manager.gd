@@ -29,7 +29,7 @@ func initialize_spells():
 	all_spells.append(Spell.new("Shield", 1, "buff", "Temporary defense boost", 5, true))
 	
 	# Tier 2 spells (2 mana) - 3 spells for river run 2
-	all_spells.append(Spell.new("Fireball", 2, "damage", "Moderate fire damage", 30))
+	all_spells.append(Spell.new("Fireball", 2, "projectile", "Fire a rock projectile", 2, true))
 	all_spells.append(Spell.new("Ice Shard", 2, "damage", "Cold damage with slow", 25))
 	all_spells.append(Spell.new("Haste", 2, "buff", "Speed boost", 10))
 	
