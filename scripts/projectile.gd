@@ -74,6 +74,11 @@ func _on_area_entered(area: Area2D):
 	var node = area
 	while node:
 		if node.is_in_group("enemies"):
+			# Don't hit the caster
+			if node == caster:
+				print("  Ignoring caster (area collision)")
+				return
+			
 			if node.has_method("take_spell_damage"):
 				node.take_spell_damage(damage)
 				print("Area collision - dealt ", damage, " damage to ", node.name, "!")
@@ -81,7 +86,23 @@ func _on_area_entered(area: Area2D):
 			return
 		node = node.get_parent()
 	
-	print("  Hit area but couldn't find enemy in parent chain")
+	# Check if we hit the player
+	node = area
+	while node:
+		if node.has_method("player"):
+			# Don't hit the caster
+			if node == caster:
+				print("  Ignoring caster (player area collision)")
+				return
+			
+			if node.has_method("take_damage"):
+				node.take_damage(damage)
+				print("Area collision - dealt ", damage, " damage to player!")
+			queue_free()
+			return
+		node = node.get_parent()
+	
+	print("  Hit area but couldn't find valid target in parent chain")
 
 func _on_lifetime_timeout():
 	# Projectile expired without hitting anything

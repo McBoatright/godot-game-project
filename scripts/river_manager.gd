@@ -238,6 +238,17 @@ func pick_orb(orb_index: int, is_player: bool) -> Spell:
 	
 	return spell
 
+func remove_orb_from_slot(slot_node: Node2D):
+	# Helper function for AI to remove an orb directly by its slot node
+	var slot_index = slot_node.get_index()
+	if slot_index >= 0 and slot_index < river_orbs.size():
+		var orb = river_orbs[slot_index]
+		if orb and not orb.picked:
+			orb.picked = true
+			# Hide the visual orb
+			if slot_node.has_node("Sprite2D"):
+				slot_node.get_node("Sprite2D").visible = false
+
 func get_player_orbs() -> Array:
 	var player_orbs = []
 	for i in range(river_orbs.size()):

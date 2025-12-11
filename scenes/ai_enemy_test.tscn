@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://dovhhtqycu8mo"]
+
+[ext_resource type="Texture2D" uid="uid://cb25weomf884c" path="res://Art/sprites/Zorb/Zorb Still.png" id="1_wcgjf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_td1qb"]
+atlas = ExtResource("1_wcgjf")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_uacde"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_td1qb")
+}],
+"loop": true,
+"name": &"front_idle",
+"speed": 5.0
+}]
+
+[node name="ai_enemy_new" type="CharacterBody2D"]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_uacde")
+animation = &"front_idle"

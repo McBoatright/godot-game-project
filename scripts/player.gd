@@ -2,16 +2,18 @@ extends CharacterBody2D
 
 var enemy_inattack_range = false
 var enemy_attack_cooldown = true
-var health = 100
+var health = 20
 var player_alive = true
 
 var attack_ip = false
 var can_take_damage = true
 
 # Mana system
-var mana = 0
-var max_mana = 99  # No limit mentioned, but setting a cap for UI
-const MANA_REGEN_INTERVAL = 5.0  # 5 seconds for testing (was 10.0)
+var current_mana = 0  # Available mana to spend
+var max_mana = 0  # Maximum mana accumulated over time
+const MAX_MANA_CAP = 99  # Hard cap for UI
+const MAX_MANA_ACCUMULATE_INTERVAL = 5.0  # Max mana grows by 1 every 5 seconds
+const CURRENT_MANA_REGEN_INTERVAL = 1.0  # Current mana regenerates 1 per second
 
 # Deck system
 var deck_manager
@@ -221,7 +223,7 @@ func _on_player_hitbox_body_exited(body: Node2D) -> void:
 
 func enemy_attack():
 	if enemy_inattack_range and enemy_attack_cooldown == true:
-		take_damage(20)
+		take_damage(1)
 		enemy_attack_cooldown = false
 		$player_hitbox/attack_cooldown.start()
 
@@ -306,20 +308,37 @@ func _on_regin_timer_timeout():
 # ===== MANA SYSTEM =====
 
 func setup_mana_timer():
-	# Create a timer for mana regeneration
-	var mana_timer = Timer.new()
-	mana_timer.name = "ManaTimer"
-	mana_timer.wait_time = MANA_REGEN_INTERVAL
-	mana_timer.autostart = true
-	mana_timer.one_shot = false
-	add_child(mana_timer)
-	mana_timer.timeout.connect(_on_mana_timer_timeout)
+	# Timer for max mana accumulation (5 seconds)
+	var max_mana_timer = Timer.new()
+	max_mana_timer.name = "MaxManaTimer"
+	max_mana_timer.wait_time = MAX_MANA_ACCUMULATE_INTERVAL
+	max_mana_timer.autostart = true
+	max_mana_timer.one_shot = false
+	add_child(max_mana_timer)
+	max_mana_timer.timeout.connect(_on_max_mana_timer_timeout)
+	
+	# Timer for current mana regeneration (1 second)
+	var current_mana_timer = Timer.new()
+	current_mana_timer.name = "CurrentManaTimer"
+	current_mana_timer.wait_time = CURRENT_MANA_REGEN_INTERVAL
+	current_mana_timer.autostart = true
+	current_mana_timer.one_shot = false
+	add_child(current_mana_timer)
+	current_mana_timer.timeout.connect(_on_current_mana_timer_timeout)
 
-func _on_mana_timer_timeout():
-	# Add 1 mana every 10 seconds
-	if mana < max_mana:
-		mana += 1
-		print("Mana regenerated! Current mana: ", mana)
+func _on_max_mana_timer_timeout():
+	# Increase max mana cap every 5 seconds
+	if max_mana < MAX_MANA_CAP:
+		max_mana += 1
+		print("Max mana increased! Max: ", max_mana, " Current: ", current_mana)
+		update_mana_ui()
+
+func _on_current_mana_timer_timeout():
+	# Regenerate current mana back to max every 1 second
+	if current_mana < max_mana:
+		current_mana += 1
+		print("Mana regenerated! Current: ", current_mana, "/", max_mana)
+		update_mana_ui()
 
 func update_mana_ui():
 	# Find HUD dynamically from the scene tree
@@ -332,7 +351,7 @@ func update_mana_ui():
 	var mana_label = hud.find_child("mana_label", true, false)
 	
 	if mana_label:
-		mana_label.text = "Mana: " + str(mana)
+		mana_label.text = "Mana: " + str(current_mana) + "/" + str(max_mana)
 	else:
 		print("WARNING: mana_label not found under HUD")
 
@@ -357,15 +376,15 @@ func _on_spell_cast(spell):
 	print("SPELL CAST: ", spell.spell_name, " for ", spell.power, " ", spell.effect_type)
 	# This is where spell effects will be applied
 	# For now, just deduct the mana cost
-	mana -= spell.mana_cost
+	current_mana -= spell.mana_cost
 	update_mana_ui()
 
 func test_cast_spell():
 	# Test function to cast a random affordable spell
-	var castable = deck_manager.get_castable_spells(mana)
+	var castable = deck_manager.get_castable_spells(current_mana)
 	if castable.size() > 0:
 		var spell = castable[0]
-		if deck_manager.cast_spell(spell, mana):
+		if deck_manager.cast_spell(spell, current_mana):
 			print("Successfully cast ", spell.spell_name)
 		else:
 			print("Failed to cast spell")
@@ -506,12 +525,12 @@ func cast_spell_from_slot(slot_index: int) -> bool:
 		return false
 	
 	# Check if player has enough mana
-	if not spell.can_cast(mana):
-		print("Not enough mana! Need ", spell.mana_cost, ", have ", mana)
+	if not spell.can_cast(current_mana):
+		print("Not enough mana! Need ", spell.mana_cost, ", have ", current_mana)
 		return false
 	
 	# Cast the spell
-	mana -= spell.mana_cost
+	current_mana -= spell.mana_cost
 	
 	# Check if spell is reusable or consumable
 	if spell.is_reusable:

@@ -1,0 +1,45 @@
+[gd_scene load_steps=2 format=3 uid="uid://cq8v3xm5b8vp1"]
+
+[ext_resource type="Script" path="res://scripts/enemy.gd" id="1_ai_enemy"]
+[ext_resource type="Texture2D" path="res://Art/sprites/objects/rock_in_water_01.png" id="2_texture"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detection"]
+radius = 60.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 12.0
+
+[node name="ai_enemy" type="CharacterBody2D"]
+script = ExtResource("1_ai_enemy")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = true
+z_index = 1
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="detection_area" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="detection_area"]
+shape = SubResource("CircleShape2D_detection")
+
+[node name="enemy_hitbox" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="enemy_hitbox"]
+shape = SubResource("CircleShape2D_hitbox")
+
+[node name="take_damage_cooldown" type="Timer" parent="."]
+wait_time = 0.25
+
+[connection signal="body_entered" from="detection_area" to="." method="_on_detection_area_body_entered"]
+[connection signal="body_exited" from="detection_area" to="." method="_on_detection_area_body_exited"]
+[connection signal="body_entered" from="enemy_hitbox" to="." method="_on_enemy_hitbox_body_entered"]
+[connection signal="body_exited" from="enemy_hitbox" to="." method="_on_enemy_hitbox_body_exited"]
+[connection signal="timeout" from="take_damage_cooldown" to="." method="_on_take_damage_cooldown_timeout"]
