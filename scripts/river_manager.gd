@@ -35,6 +35,7 @@ signal river_run_complete(run_number: int)
 signal timer_updated(time_left: float)
 
 var deck_manager = null  # Reference to DeckManager
+var player_orbs_picked_count: int = 0  # Track total player orbs picked for deck refresh
 
 func _ready():
 	setup_river_timer()
@@ -228,13 +229,20 @@ func pick_orb(orb_index: int, is_player: bool) -> Spell:
 	orb.picked = true
 	var spell = orb.spell
 	
-	# Remove this spell from the deck permanently (until deck refresh)
-	if deck_manager:
-		deck_manager.remove_spell_from_available(spell)
+	# Track player orb pickups for deck management
+	if is_player:
+		player_orbs_picked_count += 1
+		print("Player orb picked: ", spell.spell_name, " (", player_orbs_picked_count, "/15 picked)")
+		
+		# Check if all 15 player orbs have been picked
+		if player_orbs_picked_count >= 15:
+			print("=== ALL 15 PLAYER ORBS PICKED! Deck refreshing... ===")
+			player_orbs_picked_count = 0
+			if deck_manager:
+				deck_manager.refresh_deck()
 	
 	orb_picked.emit(orb_index, spell, is_player)
 	print("Orb ", orb_index, " picked: ", spell.spell_name)
-	print("  -> Spell removed from deck until refresh")
 	
 	return spell
 

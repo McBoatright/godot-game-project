@@ -797,10 +797,10 @@ func update_deck_progress_ui():
 	if not hud:
 		return
 	
-	# Update deck progress
-	if deck_manager:
+	# Update deck progress - show orbs remaining instead of spells
+	if river_manager:
 		var progress_label = hud.find_child("deck_progress_label", true, false)
 		if progress_label:
-			var total = deck_manager.all_spells.size()
-			var available = deck_manager.available_spells.size()
-			progress_label.text = "Deck: " + str(available) + "/" + str(total)
+			var total = 15
+			var remaining = total - river_manager.player_orbs_picked_count
+			progress_label.text = "Deck: " + str(remaining) + "/" + str(total)
