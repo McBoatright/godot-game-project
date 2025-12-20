@@ -22,7 +22,8 @@ var ai_cast_timer = 0.0
 var max_mana_timer = 0.0  # Timer for max mana accumulation
 var current_mana_timer = 0.0  # Timer for current mana regen
 const AI_PICKUP_INTERVAL = 8.0  # Pick up orb every 8 seconds
-const AI_CAST_INTERVAL = 3.0  # Try to cast every 3 seconds
+const AI_CAST_INTERVAL = 0.8  # Try to cast every 0.8 seconds (very aggressive)
+const AI_ATTACK_RANGE = 400.0  # Only cast projectiles if player within this range
 
 # AI Shield system
 var shield_health: int = 0
@@ -309,12 +310,30 @@ func ai_try_pickup_orb():
 	print("Enemy AI hand full, can't pick up orb")
 
 func ai_try_cast_spell():
+	# Find player for targeting
+	if player == null:
+		var world = get_parent()
+		if world:
+			player = world.get_node_or_null("player")
+			if not player:
+				player = world.get_node_or_null("Player")
+	
+	var player_distance = 999999.0
+	if player:
+		player_distance = global_position.distance_to(player.global_position)
+	
 	# Find a spell we can cast
 	for i in range(hand.size()):
 		var spell = hand[i]
 		if spell != null:
 			print("AI: Checking spell slot ", i, ": ", spell.spell_name, " costs ", spell.mana_cost, " (have ", current_mana, ")")
 			if current_mana >= spell.mana_cost:
+				# Only cast projectiles if player is in range
+				if spell.effect_type == "projectile":
+					if player_distance > AI_ATTACK_RANGE:
+						print("AI: Player too far for projectile (", player_distance, " > ", AI_ATTACK_RANGE, ")")
+						continue
+				
 				# Cast the spell
 				print("AI: Casting spell from slot ", i)
 				ai_cast_spell(spell, i)
@@ -337,25 +356,31 @@ func ai_cast_spell(spell: Spell, hand_index: int):
 	hand[hand_index] = null
 
 func ai_cast_fireball(spell: Spell):
-	# Find player in world if we don't have reference
-	if player == null:
-		var world = get_parent()
-		if world:
-			player = world.get_node_or_null("player")
-			if not player:
-				player = world.get_node_or_null("Player")
+	# Always find fresh player reference for accurate targeting
+	var target_player = null
+	var world = get_parent()
+	if world:
+		target_player = world.get_node_or_null("player")
+		if not target_player:
+			target_player = world.get_node_or_null("Player")
 	
-	if player == null:
+	if target_player == null:
 		print("AI: Cannot cast Fireball - no player found in world!")
 		return
 	
 	print("AI: Creating Fireball projectile...")
+	print("  AI position: ", global_position)
+	print("  Player position: ", target_player.global_position)
+	
 	var ProjectileScene = preload("res://scenes/projectile.tscn")
 	var projectile = ProjectileScene.instantiate()
 	get_parent().add_child(projectile)
 	
-	# Calculate direction to player
-	var direction = (player.global_position - global_position).normalized()
+	# Calculate direction to player using fresh reference
+	var direction = (target_player.global_position - global_position).normalized()
+	print("  Direction to player: ", direction)
+	print("  Direction angle (degrees): ", rad_to_deg(direction.angle()))
+	
 	# Spawn projectile offset from AI center so it doesn't hit own hitbox
 	var spawn_offset = direction * 20.0  # 20 pixels in front of AI
 	projectile.setup(global_position + spawn_offset, direction, spell.power, self)

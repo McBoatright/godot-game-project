@@ -65,6 +65,16 @@ func _on_body_entered(body: Node2D):
 func _on_area_entered(area: Area2D):
 	print("Projectile hit area: ", area.name)
 	
+	# Check if we hit another projectile (projectile vs projectile collision)
+	if area is Projectile:
+		var other_projectile = area as Projectile
+		# Only cancel out if projectiles are from different casters
+		if other_projectile.caster != caster:
+			print("PROJECTILE CLASH! Both projectiles cancelled out!")
+			other_projectile.queue_free()
+			queue_free()
+			return
+	
 	# Ignore detection_area (enemy chase detection) - only hit enemy_hitbox
 	if area.name == "detection_area":
 		print("  Ignoring detection_area")
