@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cjf8nfawyemlc" path="res://Art/sprites/objects/rock_in_water_01.png" id="2_rock"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
-radius = 8.0
+radius = 16.0
 
 [node name="Projectile" type="Area2D"]
 collision_layer = 16
@@ -14,7 +14,7 @@ monitorable = true
 script = ExtResource("1_v8j3k")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.5, 0.5)
+scale = Vector2(1.0, 1.0)
 texture = ExtResource("2_rock")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
