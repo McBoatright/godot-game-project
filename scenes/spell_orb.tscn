@@ -1,10 +1,13 @@
-[gd_scene load_steps=3 format=3 uid="uid://bvx8qm5g8k7jt"]
+[gd_scene load_steps=4 format=3 uid="uid://bvx8qm5g8k7jt"]
 
 [ext_resource type="Script" path="res://scripts/spell_orb.gd" id="1_spell_orb"]
 [ext_resource type="Texture2D" uid="uid://4q335xxs2p" path="res://Art/icon.svg" id="2_icon"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_orb"]
 radius = 12.5
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_proximity"]
+radius = 40.0
 
 [node name="SpellOrb" type="Area2D"]
 collision_layer = 8
@@ -36,3 +39,26 @@ theme_override_font_sizes/font_size = 8
 text = "Spell Name
 5 mana"
 horizontal_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="."]
+visible = false
+offset_left = -60.0
+offset_top = -35.0
+offset_right = 60.0
+offset_bottom = -15.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 10
+text = "Spell Description"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="ProximityArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="ProximityCollision" type="CollisionShape2D" parent="ProximityArea"]
+shape = SubResource("CircleShape2D_proximity")

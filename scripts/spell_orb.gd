@@ -9,6 +9,8 @@ var orb_index: int = 0
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var color_rect: ColorRect = $ColorRect
 @onready var label: Label = $Label
+@onready var description_label: Label = $DescriptionLabel
+@onready var proximity_area: Area2D = $ProximityArea
 
 # Colors for different orb types
 const PLAYER_ORB_COLOR = Color(0.3, 0.7, 1.0, 0.8)  # Light blue
@@ -20,6 +22,11 @@ func _ready():
 	
 	# Connect pickup signal
 	body_entered.connect(_on_body_entered)
+	
+	# Connect proximity detection for description
+	if proximity_area:
+		proximity_area.body_entered.connect(_on_proximity_entered)
+		proximity_area.body_exited.connect(_on_proximity_exited)
 	
 	# Set visual appearance
 	update_visual()
@@ -48,7 +55,21 @@ func update_visual():
 	# Display spell info
 	if label:
 		label.text = spell.spell_name + " (" + str(spell.mana_cost) + ")"
+	
+	# Set description (but keep it hidden until player is near)
+	if description_label and spell.description:
+		description_label.text = spell.description
 
+
+func _on_proximity_entered(body: Node2D):
+	# Show description when player gets close, but only for player orbs
+	if body.name == "player" and description_label and is_player_orb:
+		description_label.visible = true
+
+func _on_proximity_exited(body: Node2D):
+	# Hide description when player leaves
+	if body.name == "player" and description_label and is_player_orb:
+		description_label.visible = false
 func _on_body_entered(_body: Node2D):
 	# Don't auto-pickup - player must press button near orb
 	# Just track that player is nearby
