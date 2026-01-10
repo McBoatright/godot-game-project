@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+# Preload item drop scene
+var item_drop_scene = preload("res://scenes/item_drop.tscn")
+
 var speed = 40
 var player_chase = false
 var player = null
@@ -60,6 +63,7 @@ func deal_with_damage():
 			$take_damage_cooldown.start()
 			print("slime health = ", health, "/2")
 			if health <= 0:
+				drop_item()
 				self.queue_free()
 
 func _on_take_damage_cooldown_timeout():
@@ -72,4 +76,14 @@ func take_spell_damage(damage: int):
 	
 	if health <= 0:
 		print("Slime defeated!")
+		drop_item()
 		queue_free()
+
+func drop_item():
+	# Spawn an item at the slime's position
+	print("Dropping item at position: ", global_position)
+	var item = item_drop_scene.instantiate()
+	item.position = global_position
+	# Add to the world (parent to avoid being deleted with slime)
+	get_parent().add_child(item)
+	print("Item dropped successfully!")

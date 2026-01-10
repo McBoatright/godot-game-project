@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+# Preload item drop scene
+var item_drop_scene = preload("res://scenes/item_drop.tscn")
+
 var speed = 40
 var player_chase = false
 var player = null
@@ -221,6 +224,7 @@ func deal_with_damage():
 			$take_damage_cooldown.start()
 			print("AI enemy health = ", health, "/20")
 			if health <= 0:
+				drop_item()
 				self.queue_free()
 
 func _on_take_damage_cooldown_timeout():
@@ -246,6 +250,7 @@ func take_spell_damage(damage: int):
 	
 	if health <= 0:
 		print("Enemy defeated!")
+		drop_item()
 		queue_free()
 
 # AI Spell Functions
@@ -408,3 +413,12 @@ func remove_shield_visual():
 	if shield_visual:
 		shield_visual.queue_free()
 		shield_visual = null
+
+func drop_item():
+	# Spawn an item at the enemy's position
+	print("Dropping item at position: ", global_position)
+	var item = item_drop_scene.instantiate()
+	item.position = global_position
+	# Add to the world (parent's parent to avoid being deleted with enemy)
+	get_parent().add_child(item)
+	print("Item dropped successfully!")
