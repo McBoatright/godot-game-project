@@ -1,8 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://item_drop_001"]
+[gd_scene load_steps=3 format=3 uid="uid://item_drop_001"]
 
 [ext_resource type="Script" path="res://scripts/item_drop.gd" id="1_item_drop"]
 
-[node name="ItemDrop" type="Node2D"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_item"]
+radius = 20.0
+
+[node name="ItemDrop" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
 script = ExtResource("1_item_drop")
 
 [node name="Label" type="Label" parent="."]
@@ -18,3 +23,6 @@ theme_override_font_sizes/font_size = 14
 text = "Item"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_item")

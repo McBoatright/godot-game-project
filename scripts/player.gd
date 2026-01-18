@@ -467,17 +467,24 @@ func test_pick_orb():
 # ===== HAND/INVENTORY SYSTEM (PHANTOM DUST STYLE) =====
 
 func handle_slot_action(slot_index: int):
-	# Unified function: Pick up spell to slot OR cast from slot
-	# Priority: If player is near orbs, pick up. Otherwise, cast.
+	# Unified function: Pick up item/spell to slot OR cast from slot
+	# Priority: If player is near items, pick up item. If near orbs, pick up spell. Otherwise, cast.
 	
-	# Check if player is near any orbs
+	# Check if player is near any items first
+	var nearby_item = find_nearby_item()
+	if nearby_item:
+		# Player is near an item - PICK UP item mode
+		pickup_nearby_item(nearby_item, slot_index)
+		return
+	
+	# Check if player is near any spell orbs
 	var nearby_orb = find_nearby_orb()
 	if nearby_orb:
-		# Player is near an orb - PICK UP mode
+		# Player is near an orb - PICK UP spell mode
 		pickup_nearby_orb(nearby_orb, slot_index)
 		return
 	
-	# No orbs nearby - CAST mode
+	# No items or orbs nearby - CAST mode
 	cast_spell_from_slot(slot_index)
 
 func find_nearby_orb():
@@ -499,12 +506,32 @@ func pickup_nearby_orb(orb, slot_index: int):
 			assign_spell_to_slot(slot_index, spell)
 			orb.queue_free()  # Remove orb from world
 
+func find_nearby_item():
+	# Find an item that the player is standing near
+	var items = get_tree().get_nodes_in_group("item_drops")
+	for item in items:
+		if item.has_method("is_player_near") and item.is_player_near():
+			return item
+	return null
+
+func pickup_nearby_item(item, slot_index: int):
+	# Pick up the item and assign to slot
+	if item:
+		var item_name = item.item_type
+		print("Picked up: ", item_name, " and assigned to slot ", slot_index + 1)
+		
+		# Store item type in hand slot (as a string, not a Spell)
+		assign_item_to_slot(slot_index, item_name)
+		
+		# Remove item from world
+		item.queue_free()
+
 func assign_spell_to_slot(slot_index: int, spell: Spell):
 	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:
 		return
 	
 	# Check if slot already has a spell (overwrite = consume)
-	if hand[slot_index] != null:
+	if hand[slot_index] != null and hand[slot_index] is Spell:
 		var old_spell = hand[slot_index]
 		consumed_spells += 1
 		print("CONSUMED: ", old_spell.spell_name, " (Total consumed: ", consumed_spells, ")")
@@ -515,14 +542,40 @@ func assign_spell_to_slot(slot_index: int, spell: Spell):
 	print_hand()
 	update_hand_ui()
 
+func assign_item_to_slot(slot_index: int, item_name: String):
+	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:
+		return
+	
+	# Overwrite whatever is in the slot (spell or item)
+	if hand[slot_index] != null:
+		if hand[slot_index] is Spell:
+			var old_spell = hand[slot_index]
+			consumed_spells += 1
+			print("CONSUMED: ", old_spell.spell_name, " (Total consumed: ", consumed_spells, ")")
+		else:
+			print("REPLACED item: ", hand[slot_index])
+	
+	# Assign item (as string) to slot
+	hand[slot_index] = item_name
+	print("ASSIGNED to slot [", slot_index + 1, "]: ", item_name)
+	print_hand()
+	update_hand_ui()
+
 func cast_spell_from_slot(slot_index: int) -> bool:
 	if slot_index < 0 or slot_index >= MAX_HAND_SIZE:
 		return false
 	
-	var spell = hand[slot_index]
-	if spell == null:
+	var slot_content = hand[slot_index]
+	if slot_content == null:
 		print("Slot [", slot_index + 1, "] is empty!")
 		return false
+	
+	# Check if it's an item (string) instead of a spell
+	if not (slot_content is Spell):
+		print("Cannot cast item: ", slot_content, " - Items don't have casting functionality yet")
+		return false
+	
+	var spell: Spell = slot_content
 	
 	# Check if player has enough mana
 	if not spell.can_cast(current_mana):
@@ -752,9 +805,12 @@ func remove_shield_visual():
 func print_hand():
 	print("=== HAND [Consumed: ", consumed_spells, "] ===")
 	for i in range(MAX_HAND_SIZE):
-		var spell = hand[i]
-		if spell:
-			print("  [", i + 1, "] ", spell.spell_name, " - ", spell.mana_cost, " mana")
+		var slot_content = hand[i]
+		if slot_content:
+			if slot_content is Spell:
+				print("  [", i + 1, "] ", slot_content.spell_name, " - ", slot_content.mana_cost, " mana")
+			else:
+				print("  [", i + 1, "] ", slot_content, " (item)")
 		else:
 			print("  [", i + 1, "] (empty)")
 	print("=====================")
@@ -770,9 +826,14 @@ func update_hand_ui():
 		var label_name = "hand_slot_" + str(i + 1)
 		var label = hud.find_child(label_name, true, false)
 		if label:
-			var spell = hand[i]
-			if spell:
-				label.text = "[" + str(i + 1) + "] " + spell.spell_name + " (" + str(spell.mana_cost) + ")"
+			var slot_content = hand[i]
+			if slot_content:
+				if slot_content is Spell:
+					# It's a spell - show spell info
+					label.text = "[" + str(i + 1) + "] " + slot_content.spell_name + " (" + str(slot_content.mana_cost) + ")"
+				else:
+					# It's an item (string) - show item name
+					label.text = "[" + str(i + 1) + "] " + str(slot_content)
 				label.visible = true
 			else:
 				label.text = "[" + str(i + 1) + "] Empty"
