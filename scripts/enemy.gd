@@ -68,6 +68,9 @@ func _ready():
 func _physics_process(delta):
 	deal_with_damage()
 	
+	# Check for nearby slimes and defend if needed
+	check_slime_threat()
+	
 	# AI mana system
 	max_mana_timer += delta
 	current_mana_timer += delta
@@ -252,6 +255,31 @@ func take_spell_damage(damage: int):
 		print("Enemy defeated!")
 		drop_item()
 		queue_free()
+
+func check_slime_threat():
+	# Check if any slimes are nearby and cast shield if needed
+	if shield_health > 0:
+		return  # Already shielded
+	
+	# Find all slimes in the game
+	var slimes = get_tree().get_nodes_in_group("enemies")
+	for slime in slimes:
+		if slime.has_method("enemy") and slime.name.begins_with("enemy"):  # It's a basic slime
+			var distance = global_position.distance_to(slime.global_position)
+			if distance < 150:  # Slime is within 150 pixels
+				# Try to cast shield
+				ai_try_cast_shield()
+				return
+
+func ai_try_cast_shield():
+	# Find shield spell in hand and cast it
+	for i in range(hand.size()):
+		var spell = hand[i]
+		if spell and spell.effect_type == "shield":
+			if current_mana >= spell.mana_cost:
+				print("AI casting shield to defend against slime!")
+				ai_cast_spell(spell, i)
+				return
 
 # AI Spell Functions
 func ai_find_nearest_opponent_orb():

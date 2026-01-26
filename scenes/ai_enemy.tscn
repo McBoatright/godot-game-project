@@ -489,6 +489,8 @@ radius = 60.0
 radius = 12.0
 
 [node name="ai_enemy" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
 script = ExtResource("1_ai_enemy")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
