@@ -39,6 +39,8 @@ func setup(start_pos: Vector2, target_dir: Vector2, spell_damage: int, spell_cas
 
 func _on_body_entered(body: Node2D):
 	# Check if we hit something
+	print("[DEBUG] Projectile body_entered - body name:", body.name, " is in enemies group:", body.is_in_group("enemies"))
+	
 	if body == caster:
 		return  # Don't hit the caster
 	
@@ -75,6 +77,11 @@ func _on_area_entered(area: Area2D):
 			queue_free()
 			return
 	
+	# Ignore item drops - projectiles pass through them
+	if area.is_in_group("item_drops"):
+		print("  Ignoring item drop")
+		return
+	
 	# Ignore detection_area (enemy chase detection) - only hit enemy_hitbox
 	if area.name == "detection_area":
 		print("  Ignoring detection_area")
@@ -82,7 +89,9 @@ func _on_area_entered(area: Area2D):
 	
 	# Walk up the parent chain to find the enemy
 	var node = area
+	print("  [DEBUG] Walking parent chain from area:", area.name)
 	while node:
+		print("    [DEBUG] Checking node:", node.name, " in enemies group:", node.is_in_group("enemies") if node.has_method("is_in_group") else "N/A")
 		if node.is_in_group("enemies"):
 			# Don't hit the caster
 			if node == caster:
@@ -92,6 +101,8 @@ func _on_area_entered(area: Area2D):
 			if node.has_method("take_spell_damage"):
 				node.take_spell_damage(damage)
 				print("Area collision - dealt ", damage, " damage to ", node.name, "!")
+			else:
+				print("    [DEBUG] Node in enemies group but no take_spell_damage method!")
 			queue_free()
 			return
 		node = node.get_parent()

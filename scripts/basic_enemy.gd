@@ -151,6 +151,10 @@ func _on_take_damage_cooldown_timeout():
 	can_take_damage = true
 
 func take_spell_damage(damage: int):
+	# Ignore damage if already dead
+	if is_dead:
+		return
+	
 	# Take damage from player spells
 	health -= damage
 	print("Slime took ", damage, " spell damage! Health: ", health, "/2")
