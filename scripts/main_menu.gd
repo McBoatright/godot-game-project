@@ -8,5 +8,9 @@ func _on_two_player_button_pressed() -> void:
 	# Load world with 2 players (no AI)
 	get_tree().change_scene_to_file("res://scenes/world_2player.tscn")
 
+func _on_deck_manager_button_pressed() -> void:
+	# Load deck manager screen
+	get_tree().change_scene_to_file("res://scenes/deck_manager_ui.tscn")
+
 func _on_quit_button_pressed() -> void:
 	get_tree().quit()

@@ -62,10 +62,19 @@ text = "2 PLAYER LOCAL"
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
+[node name="DeckManagerButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "DECK MANAGER"
+
+[node name="Spacer4" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "QUIT"
 
 [connection signal="pressed" from="VBoxContainer/VsComputerButton" to="." method="_on_vs_computer_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/TwoPlayerButton" to="." method="_on_two_player_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/DeckManagerButton" to="." method="_on_deck_manager_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/QuitButton" to="." method="_on_quit_button_pressed"]
