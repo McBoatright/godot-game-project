@@ -21,9 +21,9 @@ func _ready():
 	back_button.pressed.connect(_on_back_button_pressed)
 
 func setup_owned_spells():
-	# For now, player owns 8 Shield and 7 Fireball
+	# For now, player owns 8 Shield and 15 Fireball
 	owned_spells["Shield"] = 8
-	owned_spells["Fireball"] = 7
+	owned_spells["Fireball"] = 15
 
 func setup_default_deck():
 	# Create the default "Test Deck"
@@ -38,6 +38,16 @@ func setup_default_deck():
 		test_deck.add_spell("Fireball")
 	
 	all_decks.append(test_deck)
+	
+	# Create "Test Deck 2" with 15 Fireballs
+	var test_deck_2 = DeckConfig.new("Test Deck 2")
+	
+	# Add 15 Fireball spells
+	for i in range(15):
+		test_deck_2.add_spell("Fireball")
+	
+	all_decks.append(test_deck_2)
+	
 	current_deck = test_deck
 
 func refresh_ui():
